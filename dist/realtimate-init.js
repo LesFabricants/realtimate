@@ -14,7 +14,7 @@ if (readline_sync_1.default.keyInYN("Do you want to install github action?")) {
     fs_1.default.writeFileSync(`${rootDir}/.github/workflows/apps.json`, "[]");
 }
 fs_1.default.mkdirSync(rootDir + "/src/types", { recursive: true });
-fs_1.default.writeFileSync(`${rootDir}/src/types/realm.d.ts`, fs_1.default.readFileSync(`${__dirname}/assets/realm.d.template`).toString());
+fs_1.default.writeFileSync(`${rootDir}/src/types/realm.d.ts`, fs_1.default.readFileSync(`${__dirname}/../realm.d.ts`).toString());
 (0, child_process_1.execSync)("npm install typescript");
 (0, child_process_1.execSync)("npm install mongodb");
 (0, child_process_1.execSync)("npm install body-parser");

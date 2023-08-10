@@ -20,7 +20,7 @@ if (ReadLine.keyInYN("Do you want to install github action?")) {
 fs.mkdirSync(rootDir + "/src/types", { recursive: true });
 fs.writeFileSync(
   `${rootDir}/src/types/realm.d.ts`,
-  fs.readFileSync(`${__dirname}/assets/realm.d.template`).toString()
+  fs.readFileSync(`${__dirname}/../realm.d.ts`).toString()
 );
 
 execSync("npm install typescript");

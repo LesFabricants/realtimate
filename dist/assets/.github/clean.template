@@ -1,0 +1,35 @@
+name: Delete old environements
+on:
+  pull_request:
+    types:
+      - closed
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  clean:
+    permissions: write-all
+    name: Clean up PR-${{ github.event.number}}
+    runs-on: ubuntu-latest
+    environment: pr-${{ github.event.number}}
+    steps:
+      - name: Load repository
+        uses: actions/checkout@master
+      - name: Generate a token
+        id: generate_token
+        uses: tibdex/github-app-token@v1.7.0
+        with:
+          app_id: ${{ secrets.MERGE_APP_ID }}
+          private_key: ${{ secrets.MERGE_PRIVATE_KEY }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          cache: npm
+      - name: 'Install the Realm CLI & authenticate'
+        run: |
+          npm install -g mongodb-realm-cli@beta
+          realm-cli login --api-key="${{ secrets.REALM_API_PUBLIC_KEY }}" --private-api-key="${{ secrets.REALM_API_PRIVATE_KEY }}" --realm-url https://realm.mongodb.com --atlas-url https://cloud.mongodb.com
+      - name: Delete realm apps
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: realm-cli apps delete -a $(gh variable list -e "pr-${{ github.event.number}}" | awk -F " " -v d="," '{s=(NR==1?s:s d)$2}END{print s}')

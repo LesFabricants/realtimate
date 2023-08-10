@@ -158,11 +158,15 @@ fs.writeFileSync(
 const jsonApps = fs.readFileSync(
   process.cwd() + "/.github/workflows/apps.json"
 );
+
+console.log(chalk.greenBright(JSON.stringify(jsonApps)));
+
 if (jsonApps) {
   const apps: { name: string }[] = JSON.parse(jsonApps.toString());
   if (!apps.find(({ name }) => name === appName)) {
     apps.push({ name: appName! });
   }
+  console.log(chalk.blueBright(JSON.stringify(apps)));
   fs.writeFileSync(
     process.cwd() + "/.github/workflows/apps.json",
     JSON.stringify(apps, null, 2)

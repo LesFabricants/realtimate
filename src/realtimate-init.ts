@@ -4,16 +4,16 @@ import { execSync } from "child_process";
 
 const rootDir = process.cwd();
 
-if (ReadLine.keyInYN("Do you want to install github action?")) {
-  fs.mkdirSync(rootDir + "/.github/workflows", { recursive: true });
-  fs.writeFileSync(
-    `${rootDir}/.github/workflows/build.yml`,
-    fs.readFileSync(`${__dirname}/assets/.github/build.template`)
-  );
-  fs.writeFileSync(
-    `${rootDir}/.github/workflows/clean.yml`,
-    fs.readFileSync(`${__dirname}/assets/.github/clean.template`)
-  );
+fs.mkdirSync(rootDir + "/.github/workflows", { recursive: true });
+fs.writeFileSync(
+  `${rootDir}/.github/workflows/build.yml`,
+  fs.readFileSync(`${__dirname}/assets/.github/build.template`)
+);
+fs.writeFileSync(
+  `${rootDir}/.github/workflows/clean.yml`,
+  fs.readFileSync(`${__dirname}/assets/.github/clean.template`)
+);
+if (!fs.readFileSync(`${rootDir}/.github/workflows/apps.json`)) {
   fs.writeFileSync(`${rootDir}/.github/workflows/apps.json`, "[]");
 }
 
@@ -23,6 +23,13 @@ fs.writeFileSync(
   fs.readFileSync(`${__dirname}/../realm.d.ts`).toString()
 );
 
-execSync("npm install typescript");
-execSync("npm install mongodb");
-execSync("npm install body-parser");
+// fs.writeFileSync(
+//   `${rootDir}/tsconfig.json`,
+//   fs.readFileSync(`${__dirname}/assets/tsconfig.template`).toString()
+// );
+// fs.writeFileSync(
+//   `${rootDir}/turbo.json`,
+//   fs.readFileSync(`${__dirname}/assets/turbo.template`).toString()
+// );
+
+execSync("npm install typescript mongodb body-parser", { stdio: "inherit" });

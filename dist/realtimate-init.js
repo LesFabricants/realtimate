@@ -14,10 +14,7 @@ if (!fs_1.default.readFileSync(`${rootDir}/.github/workflows/apps.json`)) {
 }
 fs_1.default.mkdirSync(rootDir + "/src/types", { recursive: true });
 fs_1.default.writeFileSync(`${rootDir}/src/types/realm.d.ts`, fs_1.default.readFileSync(`${__dirname}/../realm.d.ts`).toString());
-// fs.writeFileSync(
-//   `${rootDir}/tsconfig.json`,
-//   fs.readFileSync(`${__dirname}/assets/tsconfig.template`).toString()
-// );
+fs_1.default.writeFileSync(`${rootDir}/tsconfig.json`, fs_1.default.readFileSync(`${__dirname}/assets/tsconfig.template`).toString());
 // fs.writeFileSync(
 //   `${rootDir}/turbo.json`,
 //   fs.readFileSync(`${__dirname}/assets/turbo.template`).toString()

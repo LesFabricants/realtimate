@@ -1,4 +1,3 @@
-import ReadLine from "readline-sync";
 import fs from "fs";
 import { execSync } from "child_process";
 
@@ -23,10 +22,10 @@ fs.writeFileSync(
   fs.readFileSync(`${__dirname}/../realm.d.ts`).toString()
 );
 
-// fs.writeFileSync(
-//   `${rootDir}/tsconfig.json`,
-//   fs.readFileSync(`${__dirname}/assets/tsconfig.template`).toString()
-// );
+fs.writeFileSync(
+  `${rootDir}/tsconfig.json`,
+  fs.readFileSync(`${__dirname}/assets/tsconfig.template`).toString()
+);
 // fs.writeFileSync(
 //   `${rootDir}/turbo.json`,
 //   fs.readFileSync(`${__dirname}/assets/turbo.template`).toString()

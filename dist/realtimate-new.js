@@ -77,17 +77,15 @@ fs_1.default.writeFileSync(`${inventoryDir}/main/${appName}.json`, JSON.stringif
     environment: "production",
 }, null, 2));
 fs_1.default.mkdirSync(process.cwd() + "/src/" + appName, { recursive: true });
-fs_1.default.writeFileSync(`${process.cwd()}/src/${appName}/example.ts`, "exports = async () => {}");
+fs_1.default.writeFileSync(`${process.cwd()}/src/${appName}/example.ts`, fs_1.default.readFileSync(`${__dirname}/assets/example.template`));
 // if github action, then update apps.json
 const jsonApps = fs_1.default.readFileSync(process.cwd() + "/.github/workflows/apps.json");
-console.log(chalk_1.default.greenBright(JSON.stringify(jsonApps)));
 if (jsonApps) {
     const apps = JSON.parse(jsonApps.toString());
     if (!apps.find(({ name }) => name === appName)) {
         apps.push({ name: appName });
     }
-    console.log(chalk_1.default.blueBright(JSON.stringify(apps)));
     fs_1.default.writeFileSync(process.cwd() + "/.github/workflows/apps.json", JSON.stringify(apps, null, 2));
 }
-console.log(chalk_1.default.redBright(`Created ${appName} !`));
+console.log(chalk_1.default.redBright(`${appName} created 🚀 !`));
 //# sourceMappingURL=realtimate-new.js.map

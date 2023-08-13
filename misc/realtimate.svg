@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="115px" height="133px" viewBox="0 0 115 133" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Group</title>
+    <defs>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-1">
+            <stop stop-color="#32930F" offset="0%"></stop>
+            <stop stop-color="#20BE05" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-2">
+            <stop stop-color="#000000" offset="0%"></stop>
+            <stop stop-color="#616161" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group" transform="translate(0.177226, 0.718656)">
+            <polygon id="Path" fill="url(#linearGradient-1)" points="0 34.3349504 0 33.0653746 56.8227741 -1.26309718e-17 113.845001 33.0653746 113.845001 62.4902789 69.9911008 37.5146258 69.9911008 90.5528748 43.8424286 90.5528748 43.8424286 37.5146258 0 62.4902789"></polygon>
+            <polyline id="Path-2" fill="url(#linearGradient-2)" points="0 73.1723805 35.166862 52.5497367 35.166862 98.7229997 78.145803 98.7229997 78.145803 52.5497367 113.845001 73.1723805 113.845001 98.7229997 56.9225007 131.760533 0 98.7229997"></polyline>
+        </g>
+    </g>
+</svg>

@@ -4,8 +4,9 @@
   "description": "An Atlas Realm Build Environment",
   "main": "index.js",
   "scripts": {
-    "build": "npx tsc && copyfiles -a -u 1 src/assets/**/*.template dist",
-    "watch": "npx tsc-watch --onSuccess 'npx copyfiles -u 1 -a src/assets/**/*.template dist' --onCompilationComplete 'npm install -g'",
+    "build": "npx tsc && npm run assets",
+    "assets": "copyfiles -a -u 1 src/assets/**/*.template dist",
+    "watch": "npx tsc-watch --onSuccess 'npm run assets' --onCompilationComplete 'npm install -g'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
@@ -28,6 +29,7 @@
     "figlet": "^1.6.0",
     "mime-types": "^2.1.35",
     "mongodb": "^5.7.0",
+    "mongodb-memory-server": "^8.14.0",
     "readline": "^1.3.0",
     "readline-sync": "^1.4.10"
   },

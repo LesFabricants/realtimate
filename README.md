@@ -1,4 +1,8 @@
-# Realtimate : An Atlas Realm / App Service development tool
+![Realtimate](misc/realtimate.svg?raw=true "Realtimate")
+
+# Realtimate - Local Realm Atlas Environment Simulator
+
+Realtimate is a command-line tool designed to facilitate the simulation of a local environment for MongoDB Realm on Atlas. This tool enables developers to test and debug their applications that utilize MongoDB Realm services without the need to interact with a live Atlas cluster. By creating a localized simulation of the Realm environment, developers can iterate faster, identify issues earlier, and ensure the reliability of their applications.
 
 ## Installation
 
@@ -13,42 +17,40 @@ npx realtimate [arguments]
 ```
 npm install -g realtimate
 ```
-
 ## Usage
+
+Once installed, you can use the `realtimate` command to manage and simulate your local Realm Atlas environment.
+
+### Init your project
+
+To start initialization, run :
+
 ```
-  ____            _ _   _                 _       
- |  _ \ ___  __ _| | |_(_)_ __ ___   __ _| |_ ___ 
- | |_) / _ \/ _` | | __| | '_ ` _ \ / _` | __/ _ \
- |  _ <  __/ (_| | | |_| | | | | | | (_| | ||  __/
- |_| \_\___|\__,_|_|\__|_|_| |_| |_|\__,_|\__\___|
-
-
- Usage: realtimate [options] [command]
-
-Options:
-  -V, --version   output the version number
-  -w, --watch     Watch for changes
-  -h, --help      display help for command
-
-Commands:
-  init            Init the project
-  run             The command to run dev server
-  new <app>       Create a new Realm app
-  help [command]  display help for command
+realtimate init
 ```
 
-### Init
+This command initializes the project with minimum requirements and allows future deployments to realm atlas
 
-This will init a new monorepo app service project. You can found an example of a new service here: <>
+### Create a local realm app
+
+```bash
+realtimate new <appName>
+```
+
+This will create a local realm app with the good tree. and a `src/<appName>` folder with the .ts files of your functions.
 
 ### Run
 
-This will run the local development server in you app service. It will watch and build and allow you to test your endpoint, apis locally. 
+Finally, to simulate your app, just run
 
-### New
+```bash
+realtimate run
+```
 
-this will add a new app to your project
 
+## Feedback and Contributions
+
+We welcome feedback and contributions from the community. If you encounter issues, have suggestions, or want to contribute to Realtimate, please check out our [GitHub repository](https://github.com/your-username/realtimate) and open issues or pull requests.
 
 ## Development
 
@@ -57,3 +59,11 @@ Checkout this repository locally, then
 npm i
 npm run watch
 ```
+
+## License
+
+Realtimate is released under the [GNU GPL3](LICENSE).
+
+---
+
+Happy simulating with Realtimate! If you have any questions or need assistance, don't hesitate to reach out to us.

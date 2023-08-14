@@ -18,4 +18,3 @@ program
     .option("-w, --watch", "Watch for changes")
     .command("new <app>", "Create a new Realm app");
 program.parse();
-//# sourceMappingURL=index.js.map

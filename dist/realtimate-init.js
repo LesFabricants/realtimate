@@ -9,7 +9,7 @@ const rootDir = process.cwd();
 fs_1.default.mkdirSync(rootDir + "/.github/workflows", { recursive: true });
 fs_1.default.writeFileSync(`${rootDir}/.github/workflows/build.yml`, fs_1.default.readFileSync(`${__dirname}/assets/.github/build.template`));
 fs_1.default.writeFileSync(`${rootDir}/.github/workflows/clean.yml`, fs_1.default.readFileSync(`${__dirname}/assets/.github/clean.template`));
-if (!fs_1.default.readFileSync(`${rootDir}/.github/workflows/apps.json`)) {
+if (!fs_1.default.existsSync(`${rootDir}/.github/workflows/apps.json`)) {
     fs_1.default.writeFileSync(`${rootDir}/.github/workflows/apps.json`, "[]");
 }
 fs_1.default.mkdirSync(rootDir + "/src/types", { recursive: true });
@@ -20,4 +20,3 @@ fs_1.default.writeFileSync(`${rootDir}/tsconfig.json`, fs_1.default.readFileSync
 //   fs.readFileSync(`${__dirname}/assets/turbo.template`).toString()
 // );
 (0, child_process_1.execSync)("npm install typescript mongodb body-parser", { stdio: "inherit" });
-//# sourceMappingURL=realtimate-init.js.map

@@ -88,4 +88,3 @@ if (jsonApps) {
     fs_1.default.writeFileSync(process.cwd() + "/.github/workflows/apps.json", JSON.stringify(apps, null, 2));
 }
 console.log(chalk_1.default.redBright(`${appName} created 🚀 !`));
-//# sourceMappingURL=realtimate-new.js.map

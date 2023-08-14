@@ -79,4 +79,3 @@ const apps = JSON.parse(appsFile.toString());
 for (const app of apps) {
     build(app.name, { minify: true });
 }
-//# sourceMappingURL=realtimate-build.js.map

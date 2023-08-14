@@ -12,7 +12,7 @@ fs.writeFileSync(
   `${rootDir}/.github/workflows/clean.yml`,
   fs.readFileSync(`${__dirname}/assets/.github/clean.template`)
 );
-if (!fs.readFileSync(`${rootDir}/.github/workflows/apps.json`)) {
+if (!fs.existsSync(`${rootDir}/.github/workflows/apps.json`)) {
   fs.writeFileSync(`${rootDir}/.github/workflows/apps.json`, "[]");
 }
 

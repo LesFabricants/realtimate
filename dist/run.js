@@ -146,4 +146,3 @@ for (const app of apps) {
 server.listen(port, () => {
     console.log(`apps listening on port ${port}`);
 });
-//# sourceMappingURL=run.js.map

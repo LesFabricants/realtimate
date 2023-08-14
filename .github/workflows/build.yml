@@ -1,0 +1,32 @@
+on: push
+name: CI
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    name: Build, Test and Analyze
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [14, 16, 18, 20]
+    steps:
+      - name: Load repository
+        uses: actions/checkout@master
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{matrix.node}}
+          cache: npm
+          cache-dependency-path: "**/package-lock.json"
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Pack
+        run: npm pack
+      - name: Save Result
+        uses: actions/upload-artifact@v3
+        with:
+          name: realtimate-${{matrix.node}}
+          path: realtimate-*.tgz

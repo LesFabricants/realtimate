@@ -19,7 +19,7 @@ if (!fs.existsSync(`${rootDir}/.github/workflows/apps.json`)) {
 fs.mkdirSync(rootDir + "/src/types", { recursive: true });
 fs.writeFileSync(
   `${rootDir}/src/types/realm.d.ts`,
-  fs.readFileSync(`${__dirname}/../realm.d.ts`).toString()
+  fs.readFileSync(`${__dirname}/dist/realm.d.ts`).toString()
 );
 
 fs.writeFileSync(

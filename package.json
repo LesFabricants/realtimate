@@ -1,11 +1,12 @@
 {
   "name": "realtimate",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "An Atlas Realm Build Environment",
   "scripts": {
-    "build": "npx tsc && npm run assets",
+    "build": "npx tsc && npm run assets && npm run types",
     "assets": "copyfiles -a -u 1 src/assets/**/*.template dist",
-    "watch": "npx tsc-watch --onSuccess 'npm run assets' --onCompilationComplete 'npm install -g'",
+    "types": "copyfiles -a -u 1 src/realm.d.ts dist",
+    "watch": "npx tsc-watch --onSuccess 'npm run assets && npm run types' --onCompilationComplete 'npm install -g'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "main": "dist/index.js",

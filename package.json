@@ -1,6 +1,6 @@
 {
   "name": "realtimate",
-  "version": "1.0.0-alpha.3",
+  "version": "1.0.0-alpha.4",
   "description": "An Atlas Realm Build Environment",
   "scripts": {
     "build": "npx tsc && npm run assets && npm run types",

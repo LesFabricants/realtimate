@@ -8,9 +8,16 @@ jobs:
   build:
     name: Bump version
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
     steps:
       - name: Load repository
         uses: actions/checkout@master
+        with:
+          fetch-depth: 0
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -18,3 +25,5 @@ jobs:
           cache: npm
           cache-dependency-path: "**/package-lock.json"
       - run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

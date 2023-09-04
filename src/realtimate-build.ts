@@ -14,12 +14,12 @@ async function build(
   options?: { minify: boolean }
 ) {
   verbose && console.log(chalk.redBright("[realtimate] building functions..."));
-  const packageJsonSource = path.resolve(`${source}/../../package.json`);
+  const packageJsonSource = path.resolve(`${source}`, `../../package.json`);
   verbose && console.log(`package.json: `, packageJsonSource);
   const packageJson = require(packageJsonSource);
 
   const externals = ["mongodb", ...Object.keys(packageJson.dependencies)];
-  verbose && console.log(chalk.bgGray("External dependencies:", externals));
+  verbose && console.log("External dependencies:", chalk.gray(externals));
 
   const basePath = source;
   verbose && console.log(`Building functions: ${chalk.green(basePath)}`);
@@ -67,7 +67,7 @@ async function build(
   }
 
   if (!hosting) return;
-  // // Copy hosting files
+  // Copy hosting files
   const hostingSrc =
     typeof hosting === "string"
       ? path.resolve(hosting)
@@ -82,14 +82,6 @@ async function build(
     console.warn("No hosting files detected");
   }
 }
-
-// const appsFile = fs.readFileSync(
-//   `${process.cwd()}/.github/workflows/apps.json`
-// );
-// const apps: { name: string }[] = JSON.parse(appsFile.toString());
-// for (const app of apps) {
-//   build(app.name, { minify: true });
-// }
 
 program
   .option("-s, --source <source>", "App source directory")

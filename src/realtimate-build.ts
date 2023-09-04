@@ -21,7 +21,7 @@ async function build(
   const externals = ["mongodb", ...Object.keys(packageJson.dependencies)];
   verbose && console.log("External dependencies:", chalk.gray(externals));
 
-  const basePath = source;
+  const basePath = path.resolve(source);
   verbose && console.log(`Building functions: ${chalk.green(basePath)}`);
 
   const files = fs.readdirSync(basePath);

@@ -4,9 +4,6 @@ on:
       - main
 
 name: Bump Version
-concurrency:
-  group: ${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   build:
     name: Bump version

@@ -1,0 +1,23 @@
+on:
+  push:
+    branches:
+      - main
+
+name: Bump Version
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    name: Bump version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Load repository
+        uses: actions/checkout@master
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: "**/package-lock.json"
+      - run: npx semantic-release

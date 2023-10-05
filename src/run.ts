@@ -12,6 +12,8 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 import { MongoClient, ServerApiVersion } from "mongodb";
 
 import { program } from "commander";
+import { createContext, runInContext } from "node:vm";
+import { dirname } from "node:path";
 
 console.log(chalk.yellowBright("[realtimate] watching for changes..."));
 
@@ -50,18 +52,83 @@ const run = async function () {
 
   server.use(bodyParser.json());
 
-  // provide context to future functions
-  const context = {
-    services: {
-      get: () => {
-        return mongoClient;
-      },
-    },
-  };
-
   for (const app of apps) {
     const appName = app.split("/").pop();
     console.log(chalk.yellow(`[realtimate] ${app} => ${appName} detected`));
+
+    function runFunction(
+      fnPath: string,
+      request: express.Request | undefined = undefined,
+      res: express.Response | undefined = undefined,
+      ...args: any[]
+    ) {
+      // provide context to future functions
+      const context: any = {
+        services: {
+          get: () => {
+            return mongoClient;
+          },
+        },
+        environment: JSON.parse(
+          fs
+            .readFileSync(`${app}/environments/${options.environement}.json`)
+            .toString()
+        ),
+
+        functions: {
+          execute: (name: string, ...args: any[]) => {
+            const functionsConfigFile = JSON.parse(
+              fs.readFileSync(`${app}/functions/config.json`).toString()
+            );
+            for (const config of functionsConfigFile) {
+              const functionFile = fs
+                .readFileSync(`${app}/functions/${config.name}.js`)
+                .toString();
+              if (config.name === name)
+                return runFunction(functionFile, undefined, undefined, args);
+            }
+          },
+        },
+      };
+
+      if (request) {
+        context.request = {
+          rawQueryString: request.query,
+        };
+      }
+
+      let response = undefined;
+      let result: string | undefined = undefined;
+      if (res) {
+        response = {
+          setStatusCode: (status: number) => res.status(status),
+          addHeader: (header: string, value: string) =>
+            res.setHeader(header, value),
+          setBody: (body: string) => (result = body),
+        };
+      }
+
+      const vmContext = createContext({
+        context,
+        console,
+        request,
+        response,
+        require,
+        process,
+        module,
+        __filename: fnPath,
+        __dirname: dirname(fnPath),
+      });
+
+      const fnString = fs.readFileSync(fnPath).toString();
+      const fn = runInContext(fnString, vmContext);
+      return request && response
+        ? fn(request, response).then(
+            (functionResult: any) => functionResult ?? result
+          )
+        : fn(...args);
+    }
+
     const functionsConfigFile = fs.readFileSync(
       `${app}/http_endpoints/config.json`
     );
@@ -77,17 +144,20 @@ const run = async function () {
       for (const config of functionsConfig) {
         consoleResult.endpoints[config.route] = {
           method: config.http_method,
-          route: `/${appName}/endpoint${config.route}`,
+          route: `http://localhost:${port}/${appName}/endpoint${config.route}`,
         };
-        const functionFile = fs.readFileSync(
-          `${app}/functions/${config.function_name}.js`
-        );
-        const functionToExecute = eval(functionFile.toString());
+
         (server as any)[config.http_method.toLowerCase()](
           `/${appName}/endpoint${config.route}`,
           async (req: Request, res: Response) => {
             try {
-              res.send(functionToExecute(req, res));
+              res.send(
+                await runFunction(
+                  `${app}/functions/${config.function_name}.js`,
+                  req,
+                  res
+                )
+              );
             } catch (err) {
               console.error(err);
               res.send();
@@ -112,17 +182,15 @@ const run = async function () {
                 triggerConfig.event_processors.FUNCTION.config.function_name
               ] = {
                 type: "SCHEDULED",
-                testRoute: `/${appName}/trigger/${triggerConfig.event_processors.FUNCTION.config.function_name}`,
+                testRoute: `http://localhost:${port}/${appName}/trigger/${triggerConfig.event_processors.FUNCTION.config.function_name}`,
               };
               server.get(
                 `/${app}/trigger/${triggerConfig.event_processors.FUNCTION.config.function_name}`,
                 async (req, res) => {
-                  const functionFile = fs.readFileSync(
-                    `${app}/functions/${triggerConfig.event_processors.FUNCTION.config.function_name}.js`
-                  );
-                  const functionToExecute = eval(functionFile.toString());
                   try {
-                    await functionToExecute();
+                    await runFunction(
+                      `${app}/functions/${triggerConfig.event_processors.FUNCTION.config.function_name}.js`
+                    );
                   } catch (err) {
                     console.error(err);
                   }
@@ -162,12 +230,14 @@ const run = async function () {
                     )
                   ) {
                     console.log(`${chalk.red(triggerConfig.name)} triggered!`);
-                    const functionFile = fs.readFileSync(
-                      `${app}/functions/${triggerConfig.event_processors.FUNCTION.config.function_name}.js`
-                    );
-                    const functionToExecute = eval(functionFile.toString());
+
                     try {
-                      await functionToExecute(next);
+                      await runFunction(
+                        `${app}/functions/${triggerConfig.event_processors.FUNCTION.config.function_name}.js`,
+                        undefined,
+                        undefined,
+                        next
+                      );
                     } catch (err) {
                       console.error(err);
                     }
@@ -206,6 +276,11 @@ const run = async function () {
 
 program
   .option("-u, --uri <uri>", "mongodb URI")
+  .option(
+    "-e,  --environement <environement>",
+    "environement to use",
+    "development"
+  )
   .option("--port <port>", "port number", "3000")
   .option("--app [app...]", "app", [process.cwd()])
   .action(run);

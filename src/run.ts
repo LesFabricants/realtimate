@@ -11,15 +11,17 @@ import bodyParser from "body-parser";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { MongoClient, ServerApiVersion } from "mongodb";
 
+import { program } from "commander";
+
 console.log(chalk.yellowBright("[realtimate] watching for changes..."));
 
-const run = async () => {
+const run = async function () {
+  //@ts-ignore
+  const options = this.opts();
   const server = express();
-  const port =
-    process.argv.find((arg) => arg.match(/--port=(\d+)/))?.split("=")[1] ||
-    3000;
+  const port = parseInt(options.port);
 
-  let uri = process.env.MONGODB_URI;
+  let uri = options.uri ?? process.env.MONGODB_URI;
   if (!uri) {
     console.warn(
       "Using memory mongo server, if you want to use another mongo server, add MONGODB_URI as an env variable in your .env file"
@@ -44,9 +46,7 @@ const run = async () => {
     },
   });
 
-  const root = `${process.cwd()}`;
-
-  const apps = fs.readdirSync(`${root}/apps`);
+  const apps = options.app;
 
   server.use(bodyParser.json());
 
@@ -60,9 +60,10 @@ const run = async () => {
   };
 
   for (const app of apps) {
-    console.log(chalk.yellow(`[realtimate] ${app} detected`));
+    const appName = app.split("/").pop();
+    console.log(chalk.yellow(`[realtimate] ${app} => ${appName} detected`));
     const functionsConfigFile = fs.readFileSync(
-      `${root}/apps/${app}/http_endpoints/config.json`
+      `${app}/http_endpoints/config.json`
     );
     const functionsConfig = JSON.parse(
       functionsConfigFile as unknown as string
@@ -76,14 +77,14 @@ const run = async () => {
       for (const config of functionsConfig) {
         consoleResult.endpoints[config.route] = {
           method: config.http_method,
-          route: `/${app}/endpoint${config.route}`,
+          route: `/${appName}/endpoint${config.route}`,
         };
         const functionFile = fs.readFileSync(
-          `${root}/apps/${app}/functions/${config.function_name}.js`
+          `${app}/functions/${config.function_name}.js`
         );
         const functionToExecute = eval(functionFile.toString());
         (server as any)[config.http_method.toLowerCase()](
-          `/${app}/endpoint${config.route}`,
+          `/${appName}/endpoint${config.route}`,
           async (req: Request, res: Response) => {
             try {
               res.send(functionToExecute(req, res));
@@ -100,12 +101,10 @@ const run = async () => {
     }
 
     try {
-      const triggerConfigFiles = fs.readdirSync(`${root}/apps/${app}/triggers`);
+      const triggerConfigFiles = fs.readdirSync(`${app}/triggers`);
       if (triggerConfigFiles.length) {
         for (const file of triggerConfigFiles) {
-          const triggerFile = fs.readFileSync(
-            `${root}/apps/${app}/triggers/${file}`
-          );
+          const triggerFile = fs.readFileSync(`/${app}/triggers/${file}`);
           const triggerConfig = JSON.parse(triggerFile as unknown as string);
           switch (triggerConfig.type) {
             case "SCHEDULED":
@@ -113,13 +112,13 @@ const run = async () => {
                 triggerConfig.event_processors.FUNCTION.config.function_name
               ] = {
                 type: "SCHEDULED",
-                testRoute: `/${app}/trigger/${triggerConfig.event_processors.FUNCTION.config.function_name}`,
+                testRoute: `/${appName}/trigger/${triggerConfig.event_processors.FUNCTION.config.function_name}`,
               };
               server.get(
                 `/${app}/trigger/${triggerConfig.event_processors.FUNCTION.config.function_name}`,
                 async (req, res) => {
                   const functionFile = fs.readFileSync(
-                    `${root}/apps/${app}/functions/${triggerConfig.event_processors.FUNCTION.config.function_name}.js`
+                    `${app}/functions/${triggerConfig.event_processors.FUNCTION.config.function_name}.js`
                   );
                   const functionToExecute = eval(functionFile.toString());
                   try {
@@ -164,7 +163,7 @@ const run = async () => {
                   ) {
                     console.log(`${chalk.red(triggerConfig.name)} triggered!`);
                     const functionFile = fs.readFileSync(
-                      `${root}/apps/${app}/functions/${triggerConfig.event_processors.FUNCTION.config.function_name}.js`
+                      `${app}/functions/${triggerConfig.event_processors.FUNCTION.config.function_name}.js`
                     );
                     const functionToExecute = eval(functionFile.toString());
                     try {
@@ -205,4 +204,10 @@ const run = async () => {
   });
 };
 
-run();
+program
+  .option("-u, --uri <uri>", "mongodb URI")
+  .option("--port <port>", "port number", "3000")
+  .option("--app [app...]", "app", [process.cwd()])
+  .action(run);
+
+program.parse(process.argv);

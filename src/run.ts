@@ -11,15 +11,19 @@ import bodyParser from "body-parser";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { MongoClient, ServerApiVersion } from "mongodb";
 
+import { program } from "commander";
+import { createContext, runInContext } from "node:vm";
+import { dirname } from "node:path";
+
 console.log(chalk.yellowBright("[realtimate] watching for changes..."));
 
-const run = async () => {
+const run = async function () {
+  //@ts-ignore
+  const options = this.opts();
   const server = express();
-  const port =
-    process.argv.find((arg) => arg.match(/--port=(\d+)/))?.split("=")[1] ||
-    3000;
+  const port = parseInt(options.port);
 
-  let uri = process.env.MONGODB_URI;
+  let uri = options.uri ?? process.env.MONGODB_URI;
   if (!uri) {
     console.warn(
       "Using memory mongo server, if you want to use another mongo server, add MONGODB_URI as an env variable in your .env file"
@@ -44,25 +48,89 @@ const run = async () => {
     },
   });
 
-  const root = `${process.cwd()}`;
-
-  const apps = fs.readdirSync(`${root}/apps`);
+  const apps = options.app;
 
   server.use(bodyParser.json());
 
-  // provide context to future functions
-  const context = {
-    services: {
-      get: () => {
-        return mongoClient;
-      },
-    },
-  };
-
   for (const app of apps) {
-    console.log(chalk.yellow(`[realtimate] ${app} detected`));
+    const appName = app.split("/").pop();
+    console.log(chalk.yellow(`[realtimate] ${app} => ${appName} detected`));
+
+    function runFunction(
+      fnPath: string,
+      request: express.Request | undefined = undefined,
+      res: express.Response | undefined = undefined,
+      ...args: any[]
+    ) {
+      // provide context to future functions
+      const context: any = {
+        services: {
+          get: () => {
+            return mongoClient;
+          },
+        },
+        environment: JSON.parse(
+          fs
+            .readFileSync(`${app}/environments/${options.environement}.json`)
+            .toString()
+        ),
+
+        functions: {
+          execute: (name: string, ...args: any[]) => {
+            const functionsConfigFile = JSON.parse(
+              fs.readFileSync(`${app}/functions/config.json`).toString()
+            );
+            for (const config of functionsConfigFile) {
+              const functionFile = fs
+                .readFileSync(`${app}/functions/${config.name}.js`)
+                .toString();
+              if (config.name === name)
+                return runFunction(functionFile, undefined, undefined, args);
+            }
+          },
+        },
+      };
+
+      if (request) {
+        context.request = {
+          rawQueryString: request.query,
+        };
+      }
+
+      let response = undefined;
+      let result: string | undefined = undefined;
+      if (res) {
+        response = {
+          setStatusCode: (status: number) => res.status(status),
+          addHeader: (header: string, value: string) =>
+            res.setHeader(header, value),
+          setBody: (body: string) => (result = body),
+        };
+      }
+
+      const vmContext = createContext({
+        context,
+        console,
+        request,
+        response,
+        require,
+        process,
+        module,
+        __filename: fnPath,
+        __dirname: dirname(fnPath),
+      });
+
+      const fnString = fs.readFileSync(fnPath).toString();
+      const fn = runInContext(fnString, vmContext);
+      return request && response
+        ? fn(request, response).then(
+            (functionResult: any) => functionResult ?? result
+          )
+        : fn(...args);
+    }
+
     const functionsConfigFile = fs.readFileSync(
-      `${root}/apps/${app}/http_endpoints/config.json`
+      `${app}/http_endpoints/config.json`
     );
     const functionsConfig = JSON.parse(
       functionsConfigFile as unknown as string
@@ -76,17 +144,20 @@ const run = async () => {
       for (const config of functionsConfig) {
         consoleResult.endpoints[config.route] = {
           method: config.http_method,
-          route: `/${app}/endpoint${config.route}`,
+          route: `http://localhost:${port}/${appName}/endpoint${config.route}`,
         };
-        const functionFile = fs.readFileSync(
-          `${root}/apps/${app}/functions/${config.function_name}.js`
-        );
-        const functionToExecute = eval(functionFile.toString());
+
         (server as any)[config.http_method.toLowerCase()](
-          `/${app}/endpoint${config.route}`,
+          `/${appName}/endpoint${config.route}`,
           async (req: Request, res: Response) => {
             try {
-              res.send(functionToExecute(req, res));
+              res.send(
+                await runFunction(
+                  `${app}/functions/${config.function_name}.js`,
+                  req,
+                  res
+                )
+              );
             } catch (err) {
               console.error(err);
               res.send();
@@ -100,12 +171,10 @@ const run = async () => {
     }
 
     try {
-      const triggerConfigFiles = fs.readdirSync(`${root}/apps/${app}/triggers`);
+      const triggerConfigFiles = fs.readdirSync(`${app}/triggers`);
       if (triggerConfigFiles.length) {
         for (const file of triggerConfigFiles) {
-          const triggerFile = fs.readFileSync(
-            `${root}/apps/${app}/triggers/${file}`
-          );
+          const triggerFile = fs.readFileSync(`/${app}/triggers/${file}`);
           const triggerConfig = JSON.parse(triggerFile as unknown as string);
           switch (triggerConfig.type) {
             case "SCHEDULED":
@@ -113,17 +182,15 @@ const run = async () => {
                 triggerConfig.event_processors.FUNCTION.config.function_name
               ] = {
                 type: "SCHEDULED",
-                testRoute: `/${app}/trigger/${triggerConfig.event_processors.FUNCTION.config.function_name}`,
+                testRoute: `http://localhost:${port}/${appName}/trigger/${triggerConfig.event_processors.FUNCTION.config.function_name}`,
               };
               server.get(
                 `/${app}/trigger/${triggerConfig.event_processors.FUNCTION.config.function_name}`,
                 async (req, res) => {
-                  const functionFile = fs.readFileSync(
-                    `${root}/apps/${app}/functions/${triggerConfig.event_processors.FUNCTION.config.function_name}.js`
-                  );
-                  const functionToExecute = eval(functionFile.toString());
                   try {
-                    await functionToExecute();
+                    await runFunction(
+                      `${app}/functions/${triggerConfig.event_processors.FUNCTION.config.function_name}.js`
+                    );
                   } catch (err) {
                     console.error(err);
                   }
@@ -163,12 +230,14 @@ const run = async () => {
                     )
                   ) {
                     console.log(`${chalk.red(triggerConfig.name)} triggered!`);
-                    const functionFile = fs.readFileSync(
-                      `${root}/apps/${app}/functions/${triggerConfig.event_processors.FUNCTION.config.function_name}.js`
-                    );
-                    const functionToExecute = eval(functionFile.toString());
+
                     try {
-                      await functionToExecute(next);
+                      await runFunction(
+                        `${app}/functions/${triggerConfig.event_processors.FUNCTION.config.function_name}.js`,
+                        undefined,
+                        undefined,
+                        next
+                      );
                     } catch (err) {
                       console.error(err);
                     }
@@ -205,4 +274,15 @@ const run = async () => {
   });
 };
 
-run();
+program
+  .option("-u, --uri <uri>", "mongodb URI")
+  .option(
+    "-e,  --environement <environement>",
+    "environement to use",
+    "development"
+  )
+  .option("--port <port>", "port number", "3000")
+  .option("--app [app...]", "app", [process.cwd()])
+  .action(run);
+
+program.parse(process.argv);

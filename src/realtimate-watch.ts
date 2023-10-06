@@ -7,7 +7,7 @@ import path from "path";
 program
   .option("-m, --multiple", "should use all the subdirectory")
   .option("-b --build <build_opt>", "build options to use", undefined)
-  .option("-r --run <run>", "run options to use", "")
+  .option("-r --run <run>", "run options to use", undefined)
   .option("-s --source <source>", "source to use", `${process.cwd()}/src`)
   .action(function () {
     // @ts-ignore
@@ -27,11 +27,17 @@ program
       commands.push(`node ${__dirname}/realtimate-build.js ${options.build}`);
     }
 
-    commands.push(
-      `node ${__dirname}/realtimate-run.js ${apps
-        .map((appPath) => `--app="${appPath}"`)
-        .join(" ")} ${options.run}`
-    );
+    if (options.run) {
+      commands.push(
+        `node ${__dirname}/realtimate-run.js ${apps
+          .map((appPath) => `--app="${appPath}"`)
+          .join(" ")} ${options.run}`
+      );
+    }
+
+    if (!options.run && !options.build) {
+      throw new Error("--run or --build is required");
+    }
 
     const exex = `npx nodemon --quiet -e ts,json --watch ${process.cwd()} --watch ${
       options.source
@@ -42,7 +48,7 @@ program
         `[realtimate] runnning: ${exex.replaceAll(/(.*):.*@/g, "$1:********@")}`
       )
     );
-    execSync(exex, {
+    return execSync(exex, {
       stdio: "inherit",
     });
   });

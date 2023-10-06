@@ -81,11 +81,13 @@ const run = async function () {
               fs.readFileSync(`${app}/functions/config.json`).toString()
             );
             for (const config of functionsConfigFile) {
-              const functionFile = fs
-                .readFileSync(`${app}/functions/${config.name}.js`)
-                .toString();
               if (config.name === name)
-                return runFunction(functionFile, undefined, undefined, args);
+                return runFunction(
+                  `${app}/functions/${config.name}.js`,
+                  undefined,
+                  undefined,
+                  args
+                );
             }
           },
         },

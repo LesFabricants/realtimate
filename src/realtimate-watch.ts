@@ -48,7 +48,7 @@ program
         `[realtimate] runnning: ${exex.replaceAll(/(.*):.*@/g, "$1:********@")}`
       )
     );
-    return execSync(exex, {
+    execSync(exex, {
       stdio: "inherit",
     });
   });

@@ -88,7 +88,7 @@ program
   .option("-d, --destination <destination>", "Realm App destination directory")
   .option(
     "-h, --hosting [hosting directory]",
-    "enable hosting and specify hosting directtory "
+    "enable hosting and specify hosting directory "
   )
   .option("-u, --unminify", "unminify the target file")
   .option("-v, --verbose")

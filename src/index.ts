@@ -16,7 +16,7 @@ program
   .command("init", "Init the project")
   .command("run", "The command to run dev server")
   .command("build", "The command to build the app")
-  .option("-w, --watch", "Watch for changes")
+  .command("watch", "The command to watch the app")
   .command("new <app>", "Create a new Realm app");
 
 program.parse();

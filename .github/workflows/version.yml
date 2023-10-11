@@ -18,6 +18,7 @@ jobs:
         uses: actions/checkout@master
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -25,6 +26,7 @@ jobs:
           cache: npm
           cache-dependency-path: "**/package-lock.json"
       - run: npm ci
+      - run: npm audit signatures
       - run: npm run build
       - run: npx semantic-release
         env:

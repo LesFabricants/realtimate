@@ -174,7 +174,7 @@ const run = async function () {
       const triggerConfigFiles = fs.readdirSync(`${app}/triggers`);
       if (triggerConfigFiles.length) {
         for (const file of triggerConfigFiles) {
-          const triggerFile = fs.readFileSync(`/${app}/triggers/${file}`);
+          const triggerFile = fs.readFileSync(`${app}/triggers/${file}`);
           const triggerConfig = JSON.parse(triggerFile as unknown as string);
           switch (triggerConfig.type) {
             case "SCHEDULED":

@@ -15,8 +15,6 @@ import { program } from "commander";
 import { createContext, runInContext } from "node:vm";
 import { dirname } from "node:path";
 
-console.log(chalk.yellowBright("[realtimate] watching for changes..."));
-
 const run = async function () {
   //@ts-ignore
   const options = this.opts();
@@ -201,16 +199,6 @@ const run = async function () {
               );
               break;
             case "DATABASE":
-              consoleResult.triggers.push(
-                `${chalk.blue(
-                  triggerConfig.config.collection
-                )} : ${chalk.bgYellow(
-                  triggerConfig.config.operation_types.join(", ")
-                )} => ${chalk.yellow(
-                  triggerConfig.event_processors.FUNCTION.config.function_name
-                )}`
-              );
-
               consoleResult.triggers[
                 triggerConfig.event_processors.FUNCTION.config.function_name
               ] = {

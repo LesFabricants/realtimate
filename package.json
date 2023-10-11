@@ -17,6 +17,7 @@
   "bin": {
     "realtimate": "./dist/index.js"
   },
+  "repository": "github:LesFabricants/realtimate",
   "author": "Les Fabricants",
   "license": "GPL-3.0-or-later",
   "dependencies": {

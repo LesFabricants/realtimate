@@ -90,6 +90,13 @@ jobs:
           APP_ID: ${{ env.APP_ID }}
         run: envsubst < inventory/template/${{matrix.app.name}}.json > apps/${{matrix.app.name}}/realm_config.json
 
+      - name: Copy realm_config.json (override with ${{ env.env }})
+        continue-on-error: true
+        env:
+          PREFIX: ${{ env.env }}
+          APP_ID: ${{ env.APP_ID }}
+        run: envsubst < inventory/${{ env.env }}/${{matrix.app.name}}.json > apps/${{matrix.app.name}}/realm_config.json
+
       - run: mkdir -p apps/${{matrix.app.name}}/hosting/files/
       
       - name: update hosting file

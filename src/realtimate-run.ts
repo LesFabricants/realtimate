@@ -15,6 +15,32 @@ import { program } from "commander";
 import { createContext, runInContext } from "node:vm";
 import { dirname } from "node:path";
 
+const typedarray = {
+  Int8Array,
+  Uint8Array,
+  Uint8ClampedArray,
+  Int16Array,
+  Uint16Array,
+  Int32Array,
+  Uint32Array,
+  Float32Array,
+  Float64Array,
+};
+
+const builtins = {
+  console,
+  require,
+  process,
+  module,
+  fetch,
+  Map,
+  Promise,
+  Set,
+  Symbol,
+  WeakMap,
+  ...typedarray,
+};
+
 const run = async function () {
   //@ts-ignore
   const options = this.opts();
@@ -110,12 +136,9 @@ const run = async function () {
 
       const vmContext = createContext({
         context,
-        console,
         request,
         response,
-        require,
-        process,
-        module,
+        ...builtins,
         __filename: fnPath,
         __dirname: dirname(fnPath),
       });

@@ -52,6 +52,7 @@ const run = async function () {
   const apps = options.app;
 
   server.use(bodyParser.json());
+  server.use(bodyParser.text());
 
   for (const app of apps) {
     const appName = app.split("/").pop();
@@ -120,6 +121,15 @@ const run = async function () {
           data: {},
           custom_data: {},
           identities: [],
+        },
+        values: {
+          get(name) {
+              
+          },
+        }
+        http: {
+          get(options) {},
+          post(options) {},
         },
       };
 
@@ -227,7 +237,8 @@ const run = async function () {
               ] = {
                 type: "DATABASE",
                 collection: triggerConfig.config.collection,
-                opertion_types: triggerConfig.config.operation_types.join(", "),
+                operation_types:
+                  triggerConfig.config.operation_types.join(", "),
               };
 
               const changeStream = mongoClient
@@ -274,7 +285,7 @@ const run = async function () {
         "type",
         "testRoute",
         "collection",
-        "opertion_types",
+        "operation_types",
       ]);
     } catch (e) {
       console.log(`no triggers on ${app}`);

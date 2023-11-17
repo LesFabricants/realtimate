@@ -64,6 +64,12 @@ const run = async function () {
       res: express.Response | undefined = undefined,
       ...args: any[]
     ) {
+      const envValues = JSON.parse(
+        fs
+          .readFileSync(`${app}/environments/${options.environement}.json`)
+          .toString()
+      );
+
       // provide context to future functions
       const context: typeof global.context = {
         services: {
@@ -79,11 +85,7 @@ const run = async function () {
         },
         environment: {
           tag: options.environement,
-          ...JSON.parse(
-            fs
-              .readFileSync(`${app}/environments/${options.environement}.json`)
-              .toString()
-          ),
+          ...envValues,
         },
 
         functions: {
@@ -124,12 +126,19 @@ const run = async function () {
         },
         values: {
           get(name) {
-              
+            return envValues[name];
           },
-        }
+        },
         http: {
-          get(options) {},
-          post(options) {},
+          get(options) {
+            return fetch(options.url, {
+              headers: options.headers,
+              method: "GET",
+            });
+          },
+          post(options) {
+            return fetch(options.url, { body: options.body, method: "POST" });
+          },
         },
       };
 

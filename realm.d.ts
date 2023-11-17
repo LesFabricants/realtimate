@@ -47,7 +47,7 @@ declare namespace context {
   };
 
   const values: {
-    get: (name: string) => string;
+    get: (name: string) => string | undefined;
   };
 }
 

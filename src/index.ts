@@ -13,10 +13,10 @@ program
   .name("realtimate")
   .version(process.env.npm_package_version || "")
   .description(process.env.npm_package_description || "")
-  .command("init", "Init the project")
+  .command("new", "Create a new  project")
   .command("run", "The command to run dev server")
   .command("build", "The command to build the app")
   .command("watch", "The command to watch the app")
-  .command("new <app>", "Create a new Realm app");
+  .command("generate <app>", "Generate a new Realm app");
 
 program.parse();

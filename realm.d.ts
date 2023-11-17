@@ -2,10 +2,7 @@
 
 type Services = {
   // add your other services here
-  (name: "mongodb-atlas"): import("mongodb").MongoClient;
-  (name: "Db"): import("mongodb").Db;
-  (name: "WithId"): import("mongodb").WithId<import("mongodb").Document>;
-  (name: string): any;
+  (name: string): import("mongodb").MongoClient | undefined;
 };
 
 declare namespace context {

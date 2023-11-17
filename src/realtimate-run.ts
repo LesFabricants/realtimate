@@ -16,6 +16,8 @@ import { createContext, runInContext } from "node:vm";
 import { dirname } from "node:path";
 import { builtins } from "./builtins";
 
+import querystring from "node:querystring";
+
 const run = async function () {
   //@ts-ignore
   const options = this.opts();
@@ -62,9 +64,10 @@ const run = async function () {
       ...args: any[]
     ) {
       // provide context to future functions
-      const context: Context = {
+      const context: typeof global.context = {
         services: {
           get: (name: string) => {
+            // TODO: better scheming
             switch (name) {
               case "mongodb-client":
                 return mongoClient;
@@ -98,19 +101,27 @@ const run = async function () {
             }
           },
         },
+        request: request
+          ? {
+              remoteIPAddress: request.ip,
+              requestHeaders: request.headers,
+              webhookUrl: request.url,
+              httpMethod: request.method,
+              rawQueryString: querystring.stringify(request.query as any),
+              httpReferrer: request.headers.referer,
+              httpUserAgent: request.headers["user-agent"],
+              service: "",
+              action: "",
+            }
+          : undefined,
+        user: {
+          id: "",
+          type: "system",
+          data: {},
+          custom_data: {},
+          identities: [],
+        },
       };
-
-      if (request) {
-        context.request = {
-          remoteIpAddress: request.ip,
-          requestHeaders: request.headers,
-          webhookUrl: request.url,
-          httpMethod: request.method,
-          rawQueryString: request.query,
-          httpReferrer: request.headers.referer,
-          httpUserAgent: request.headers["user-agent"],
-        };
-      }
 
       let response = undefined;
       let result: string | undefined = undefined;

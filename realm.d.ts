@@ -16,7 +16,15 @@ declare namespace context {
     values: Record<string, string>;
   };
   const request: {
-    rawQueryString: String;
+    remoteIPAddress: string;
+    requestHeaders: object;
+    webhookUrl: string;
+    httpMethod: string;
+    rawQueryString: string;
+    httpReferrer: string;
+    httpUserAgent: string;
+    service: string;
+    action: string;
   };
   const functions: {
     execute: (name: string, ...args: any[]) => any;

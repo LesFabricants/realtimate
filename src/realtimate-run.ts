@@ -62,17 +62,25 @@ const run = async function () {
       ...args: any[]
     ) {
       // provide context to future functions
-      const context: any = {
+      const context: Context = {
         services: {
-          get: () => {
-            return mongoClient;
+          get: (name: string) => {
+            switch (name) {
+              case "mongodb-client":
+                return mongoClient;
+              default:
+                return undefined;
+            }
           },
         },
-        environment: JSON.parse(
-          fs
-            .readFileSync(`${app}/environments/${options.environement}.json`)
-            .toString()
-        ),
+        environment: {
+          tag: options.environement,
+          ...JSON.parse(
+            fs
+              .readFileSync(`${app}/environments/${options.environement}.json`)
+              .toString()
+          ),
+        },
 
         functions: {
           execute: (name: string, ...args: any[]) => {
@@ -94,7 +102,13 @@ const run = async function () {
 
       if (request) {
         context.request = {
+          remoteIpAddress: request.ip,
+          requestHeaders: request.headers,
+          webhookUrl: request.url,
+          httpMethod: request.method,
           rawQueryString: request.query,
+          httpReferrer: request.headers.referer,
+          httpUserAgent: request.headers["user-agent"],
         };
       }
 

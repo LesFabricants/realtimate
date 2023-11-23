@@ -79,7 +79,7 @@ const run = async function () {
               case "mongodb-client":
                 return mongoClient;
               default:
-                return undefined;
+                return undefined as any;
             }
           },
         },

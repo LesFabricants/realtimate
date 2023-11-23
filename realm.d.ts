@@ -2,7 +2,7 @@
 
 type Services = {
   // add your other services here
-  (name: string): import("mongodb").MongoClient | undefined;
+  (name: string): import("mongodb").MongoClient;
 };
 
 declare namespace context {

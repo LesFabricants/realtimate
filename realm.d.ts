@@ -1,11 +1,8 @@
 /// <reference types="mongodb" />
 
 type Services = {
-  (name: "mongodb-atlas"): import("mongodb").MongoClient;
-  (name: "Db"): import("mongodb").Db;
-  (name: "WithId"): import("mongodb").WithId<import("mongodb").Document>;
   // add your other services here
-  (name: string): any;
+  (name: string): import("mongodb").MongoClient;
 };
 
 declare namespace context {
@@ -22,9 +19,19 @@ declare namespace context {
     tag: string;
     values: Record<string, string>;
   };
-  const request: {
-    rawQueryString: String;
-  };
+  const request:
+    | {
+        remoteIPAddress: string;
+        requestHeaders: object;
+        webhookUrl?: string;
+        httpMethod?: string;
+        rawQueryString: string;
+        httpReferrer?: string;
+        httpUserAgent?: string;
+        service: string;
+        action: string;
+      }
+    | undefined;
   const functions: {
     execute: (name: string, ...args: any[]) => any;
   };
@@ -37,7 +44,7 @@ declare namespace context {
   };
 
   const values: {
-    get: (name: string) => string;
+    get: (name: string) => string | undefined;
   };
 }
 

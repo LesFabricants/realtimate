@@ -14,6 +14,9 @@ import { MongoClient, ServerApiVersion } from "mongodb";
 import { program } from "commander";
 import { createContext, runInContext } from "node:vm";
 import { dirname } from "node:path";
+import { builtins } from "./builtins";
+
+import querystring from "node:querystring";
 
 const run = async function () {
   //@ts-ignore
@@ -61,18 +64,29 @@ const run = async function () {
       res: express.Response | undefined = undefined,
       ...args: any[]
     ) {
+      const envValues = JSON.parse(
+        fs
+          .readFileSync(`${app}/environments/${options.environement}.json`)
+          .toString()
+      );
+
       // provide context to future functions
-      const context: any = {
+      const context: typeof global.context = {
         services: {
-          get: () => {
-            return mongoClient;
+          get: (name: string) => {
+            // TODO: better scheming
+            switch (name) {
+              case "mongodb-client":
+                return mongoClient;
+              default:
+                return undefined as any;
+            }
           },
         },
-        environment: JSON.parse(
-          fs
-            .readFileSync(`${app}/environments/${options.environement}.json`)
-            .toString()
-        ),
+        environment: {
+          tag: options.environement,
+          ...envValues,
+        },
 
         functions: {
           execute: (name: string, ...args: any[]) => {
@@ -90,13 +104,43 @@ const run = async function () {
             }
           },
         },
+        request: request
+          ? {
+              remoteIPAddress: request.ip,
+              requestHeaders: request.headers,
+              webhookUrl: request.url,
+              httpMethod: request.method,
+              rawQueryString: querystring.stringify(request.query as any),
+              httpReferrer: request.headers.referer,
+              httpUserAgent: request.headers["user-agent"],
+              service: "",
+              action: "",
+            }
+          : undefined,
+        user: {
+          id: "",
+          type: "system",
+          data: {},
+          custom_data: {},
+          identities: [],
+        },
+        values: {
+          get(name) {
+            return envValues[name];
+          },
+        },
+        http: {
+          get(options) {
+            return fetch(options.url, {
+              headers: options.headers,
+              method: "GET",
+            });
+          },
+          post(options) {
+            return fetch(options.url, { body: options.body, method: "POST" });
+          },
+        },
       };
-
-      if (request) {
-        context.request = {
-          rawQueryString: request.query,
-        };
-      }
 
       let response = undefined;
       let result: string | undefined = undefined;
@@ -111,12 +155,9 @@ const run = async function () {
 
       const vmContext = createContext({
         context,
-        console,
         request,
         response,
-        require,
-        process,
-        module,
+        ...builtins,
         __filename: fnPath,
         __dirname: dirname(fnPath),
       });

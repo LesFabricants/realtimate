@@ -71,7 +71,7 @@ const run = async function () {
       );
 
       // provide context to future functions
-      const context: typeof global.context = {
+      const context: RealmContext = {
         services: {
           get: (name: string) => {
             // TODO: better scheming
@@ -142,7 +142,7 @@ const run = async function () {
         },
       };
 
-      let response = undefined;
+      let response: RealmResponse | undefined = undefined;
       let result: string | undefined = undefined;
       if (res) {
         response = {
@@ -168,7 +168,7 @@ const run = async function () {
         ? fn(request, response).then(
             (functionResult: any) => functionResult ?? result
           )
-        : fn(...args);
+        : fn.apply(null, ...args);
     }
 
     const functionsConfigFile = fs.readFileSync(

@@ -5,21 +5,21 @@ type Services = {
   (name: string): import("mongodb").MongoClient;
 };
 
-declare namespace context {
-  const http: {
+type RealmContext = {
+  http: {
     get: (options: { url: string; headers?: any }) => Promise<any>;
     post: (options: { url: string; body: any }) => Promise<any>;
   };
 
-  const services: {
+  services: {
     get: Services;
   };
 
-  const environment: {
+  environment: {
     tag: string;
     values: Record<string, string>;
   };
-  const request:
+  request:
     | {
         remoteIPAddress: string;
         requestHeaders: object;
@@ -32,10 +32,10 @@ declare namespace context {
         action: string;
       }
     | undefined;
-  const functions: {
+  functions: {
     execute: (name: string, ...args: any[]) => any;
   };
-  const user: {
+  user: {
     id: string;
     type: "normal" | "server" | "system";
     data: object;
@@ -43,16 +43,22 @@ declare namespace context {
     identities: any[];
   };
 
-  const values: {
+  values: {
     get: (name: string) => string | undefined;
   };
-}
+};
 
-declare namespace response {
-  const setStatusCode: void;
-  const setBody: void;
-}
+type RealmResponse = {
+  setStatusCode: (code: number) => void;
+  setBody: (body: string) => void;
+  addHeader: (header: string, value: string) => void;
+};
 
 declare namespace BSON {
   const ObjectId: (id?: string) => import("mongodb").BSON.ObjectId;
+}
+
+declare namespace Global {
+  const response: RealmResponse;
+  const context: RealmContext;
 }

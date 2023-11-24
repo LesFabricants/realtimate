@@ -30,6 +30,7 @@ program
     "should use all the subdirectory",
     `${process.cwd()}`
   )
+  .option("-M, --no-multiple", "should list all the subdirectory")
   .option("-B --no-build", "build options to use", true)
   .option("-R --no-run", "run options to use", true)
   .option("-u, --uri <uri>", "mongodb URI")
@@ -46,7 +47,9 @@ program
     const options = this.opts();
     const verbose = options.verbose;
 
-    let apps = readdirSync(options.app).map((app) => ({
+    let apps = (
+      options.multiple ? readdirSync(options.app) : [options.app]
+    ).map((app) => ({
       app,
       source: resolve(options.source, app),
       destination: resolve(options.app, app),

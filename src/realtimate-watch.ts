@@ -3,8 +3,8 @@ import { program } from "commander";
 import { config } from "dotenv";
 import { FSWatcher, readdirSync, watch } from "fs";
 import { resolve } from "path";
+import { TypescriptDepencyGraph } from "typescript-source-graph";
 import { buildFunction } from "./utils/build";
-import getInvertedDependencyGraphForFiles from "./utils/graph";
 import { run } from "./utils/run";
 
 config();
@@ -71,9 +71,12 @@ program
                 fullpath
               )}, recompiling afected functions`
             );
-          const graph = getInvertedDependencyGraphForFiles(options.source);
+          const graph = new TypescriptDepencyGraph(options.source);
 
-          const impacted: string[] = [fullpath, ...graph[fullpath]];
+          const impacted: string[] = [
+            fullpath,
+            ...graph.getParentFiles(fullpath),
+          ];
 
           const shouldRebuild = impacted.filter((path) =>
             apps.some((app) => path.includes(app.source))

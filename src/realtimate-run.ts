@@ -53,6 +53,7 @@ const run = async function () {
 
   server.use(bodyParser.json());
   server.use(bodyParser.text());
+  server.use(bodyParser.urlencoded());
 
   for (const app of apps) {
     const appName = app.split("/").pop();
@@ -164,6 +165,14 @@ const run = async function () {
 
       const fnString = fs.readFileSync(fnPath).toString();
       const fn = runInContext(fnString, vmContext);
+
+      if (request && JSON.stringify(request.query) == "{}") {
+        request.query = request.body;
+      }
+
+      if (request && request.body && !request.body.text)
+        request.body.text = () => JSON.stringify(request.body);
+
       return request && response
         ? fn(request, response).then(
             (functionResult: any) => functionResult ?? result

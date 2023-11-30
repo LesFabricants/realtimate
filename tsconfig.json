@@ -5,12 +5,10 @@
     "strict": true,
     "target": "es2021",
     "module": "commonjs",
-    "sourceMap": false,
+    "sourceMap": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "types": [
-      "./realm.d.ts"
-    ]
+    "types": ["./realm.d.ts"]
   }
 }

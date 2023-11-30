@@ -58,7 +58,10 @@ export const builtins = {
   // FunctionError,
   // StitchError,
   Promise,
-  BSON,
+  BSON: {
+    ...BSON,
+    ObjectId: (x?: string) => new BSON.ObjectId(x),
+  },
   EJSON: require("ejson"),
   utils: {
     crypto: {

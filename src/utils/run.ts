@@ -43,6 +43,7 @@ export async function run(
 
   server.use(bodyParser.json());
   server.use(bodyParser.text());
+  server.use(bodyParser.urlencoded());
 
   for (const app of apps) {
     const appName = app.split("/").pop();
@@ -59,12 +60,12 @@ export async function run(
       );
 
       // provide context to future functions
-      const context: typeof global.context = {
+      const context: RealmContext = {
         services: {
           get: (name: string) => {
             // TODO: better scheming
             switch (name) {
-              case "mongodb-client":
+              case "mongodb-atlas":
                 return mongoClient;
               default:
                 return undefined as any;
@@ -113,22 +114,29 @@ export async function run(
           identities: [],
         },
         values: {
-          get(name) {
+          get(name: any) {
             return envValues[name];
           },
         },
         http: {
-          get(options) {
+          get(options: any) {
             return fetch(options.url, {
               headers: options.headers,
               method: "GET",
             });
           },
-          post(options) {
+          post(options: any) {
             return fetch(options.url, { body: options.body, method: "POST" });
           },
         },
       };
+
+      if (request && Object.keys(request.query).length === 0) {
+        request.query = request.body;
+      }
+
+      if (request && request.body && !request.body.text)
+        request.body.text = () => JSON.stringify(request.body);
 
       let response = undefined;
       let result: string | undefined = undefined;

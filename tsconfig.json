@@ -9,8 +9,6 @@
     "esModuleInterop": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "types": [
-      "./realm.d.ts"
-    ]
+    "types": ["./realm.d.ts"]
   }
 }

@@ -4,7 +4,7 @@ import { config } from "dotenv";
 import { FSWatcher, readdirSync, watch } from "fs";
 import { resolve } from "path";
 import { TypescriptDepencyGraph } from "typescript-source-graph";
-import { buildFunction } from "./utils/build";
+import { build, buildFunction } from "./utils/build";
 import { run } from "./utils/run";
 
 config();
@@ -42,7 +42,7 @@ program
   .option("--port <port>", "port number", "3000")
   .option("-s --source <source>", "source to use", `${process.cwd()}/src`)
   .option("-v --verbose")
-  .action(function () {
+  .action(async function () {
     // @ts-ignore
     const options = this.opts();
     const verbose = options.verbose;
@@ -99,6 +99,15 @@ program
           }
         });
       });
+
+      console.time("build");
+      await Promise.all(
+        apps.map((app) =>
+          build(app.source, app.destination, false, options.verbose)
+        )
+      );
+      console.timeEnd("build");
+
       console.log(
         `Staring watching for changes in ${chalk.green(options.source)}`
       );

@@ -87,15 +87,19 @@ program
             const split = func.split("/");
             const [file, ...basePath] = [split.pop(), ...split];
 
-            await buildFunction(
-              basePath.join("/"),
-              file!,
-              app.destination,
-              {
-                externals,
-              },
-              verbose
-            );
+            try {
+              await buildFunction(
+                basePath.join("/"),
+                file!,
+                app.destination,
+                {
+                  externals,
+                },
+                verbose
+              );
+            } catch(e: any){
+              console.warn(e?.message);
+            }
           }
         });
       });

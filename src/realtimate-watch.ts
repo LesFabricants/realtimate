@@ -1,55 +1,125 @@
 import chalk from "chalk";
-import { execSync } from "child_process";
 import { program } from "commander";
-import { readdirSync } from "fs";
-import path from "path";
+import { config } from "dotenv";
+import { FSWatcher, readdirSync, watch } from "fs";
+import { resolve } from "path";
+import { TypescriptDepencyGraph } from "typescript-source-graph";
+import { buildFunction } from "./utils/build";
+import { run } from "./utils/run";
+
+config();
+
+const timer: Map<string, NodeJS.Timeout> = new Map();
+const debounceFile = (
+  file: string,
+  func: (file: string) => void,
+  timeout = 50
+) => {
+  clearTimeout(timer.get(file));
+  timer.set(
+    file,
+    setTimeout(() => {
+      func.apply(null, [file]);
+    }, timeout)
+  );
+};
 
 program
-  .option("-m, --multiple", "should use all the subdirectory")
-  .option("-b --build <build_opt>", "build options to use", undefined)
-  .option("-r --run <run>", "run options to use", undefined)
+  .option(
+    "-a, --app <app>",
+    "should use all the subdirectory",
+    `${process.cwd()}`
+  )
+  .option("-M, --no-multiple", "should list all the subdirectory")
+  .option("-B --no-build", "build options to use", true)
+  .option("-R --no-run", "run options to use", true)
+  .option("-u, --uri <uri>", "mongodb URI")
+  .option(
+    "-e,  --environement <environement>",
+    "environement to use",
+    "development"
+  )
+  .option("--port <port>", "port number", "3000")
   .option("-s --source <source>", "source to use", `${process.cwd()}/src`)
+  .option("-v --verbose")
   .action(function () {
     // @ts-ignore
     const options = this.opts();
+    const verbose = options.verbose;
 
-    let apps = [process.cwd()];
+    let apps = (
+      options.multiple ? readdirSync(options.app) : [options.app]
+    ).map((app) => ({
+      app,
+      source: resolve(options.source, app),
+      destination: resolve(options.app, app),
+    }));
 
-    let commands: string[] = [];
-
-    if (options.multiple) {
-      apps = readdirSync(options.source).map((app) =>
-        path.resolve(options.source, app)
-      );
-    }
-
+    let watcher: FSWatcher;
     if (options.build) {
-      commands.push(`node ${__dirname}/realtimate-build.js ${options.build}`);
+      const packageJsonSource = resolve(`${options.source}`, `../package.json`);
+      verbose && console.log(`package.json: `, packageJsonSource);
+      const packageJson = require(packageJsonSource);
+
+      const externals = ["mongodb", ...Object.keys(packageJson.dependencies)];
+      watcher = watch(options.source, { recursive: true }, (_, filename) => {
+        debounceFile(filename!, async (filename) => {
+          const fullpath = resolve(options.source, filename!);
+          verbose &&
+            console.log(
+              `Detected changes in ${chalk.gray(
+                fullpath
+              )}, recompiling afected functions`
+            );
+          const graph = new TypescriptDepencyGraph(options.source);
+
+          const impacted: string[] = [
+            fullpath,
+            ...graph.getParentFiles(fullpath),
+          ];
+
+          const shouldRebuild = impacted.filter((path) =>
+            apps.some((app) => path.includes(app.source))
+          );
+
+          for (const func of shouldRebuild) {
+            const app = apps.find((app) => func.includes(app.source))!;
+            const split = func.split("/");
+            const [file, ...basePath] = [split.pop(), ...split];
+
+            await buildFunction(
+              basePath.join("/"),
+              file!,
+              app.destination,
+              {
+                externals,
+              },
+              verbose
+            );
+          }
+        });
+      });
+      console.log(
+        `Staring watching for changes in ${chalk.green(options.source)}`
+      );
     }
 
     if (options.run) {
-      commands.push(
-        `node ${__dirname}/realtimate-run.js ${apps
-          .map((appPath) => `--app="${appPath}"`)
-          .join(" ")} ${options.run}`
+      const port = parseInt(options.port);
+
+      let uri = options.uri ?? process.env.MONGODB_URI;
+
+      run(
+        port,
+        uri,
+        apps.map((apps) => apps.destination),
+        options.environement
       );
     }
 
-    if (!options.run && !options.build) {
-      throw new Error("--run or --build is required");
-    }
-
-    const exex = `npx nodemon --quiet -e ts,json --watch ${process.cwd()} --watch ${
-      options.source
-    } --exec '${commands.join(" && ")}'`;
-
-    console.log(
-      chalk.grey(
-        `[realtimate] runnning: ${exex.replaceAll(/(.*):.*@/g, "$1:********@")}`
-      )
-    );
-    execSync(exex, {
-      stdio: "inherit",
+    process.on("SIGINT", () => {
+      watcher?.close();
+      process.exit(0);
     });
   });
 

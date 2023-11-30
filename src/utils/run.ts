@@ -88,7 +88,7 @@ export async function run(
                   `${app}/functions/${config.name}.js`,
                   undefined,
                   undefined,
-                  args
+                  ...args
                 );
             }
           },

@@ -164,7 +164,7 @@ export async function run(
         ? fn(request, response).then(
             (functionResult: any) => functionResult ?? result
           )
-        : fn(...args);
+        : fn.call(null, ...args);
     }
 
     const functionsConfigFile = fs.readFileSync(

@@ -215,7 +215,7 @@ export async function run(
                 testRoute: `http://localhost:${port}/${appName}/trigger/${triggerConfig.event_processors.FUNCTION.config.function_name}`,
               };
               server.get(
-                `/${app}/trigger/${triggerConfig.event_processors.FUNCTION.config.function_name}`,
+                `/${appName}/trigger/${triggerConfig.event_processors.FUNCTION.config.function_name}`,
                 async (req, res) => {
                   try {
                     await runFunction(

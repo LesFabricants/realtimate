@@ -23,24 +23,29 @@ export async function build(
   const basePath = path.resolve(source);
   verbose && console.log(`Building functions: ${chalk.green(basePath)}`);
 
-  const files = fs.readdirSync(basePath);
-  for (const file of files) {
-    try {
-      const nccOptions = Object.assign(
-        {
-          externals,
-          minify: true,
-          target: "es2022",
-          v8cache: false,
-          quiet: true,
-          debugLog: false, // default
-        },
-        options
-      );
-      await buildFunction(basePath, file, destination, nccOptions);
-    } catch (err) {
-      console.warn(err);
+  try {
+    const files = fs.readdirSync(basePath);
+    for (const file of files) {
+      try {
+        const nccOptions = Object.assign(
+          {
+            externals,
+            minify: true,
+            target: "es2022",
+            v8cache: false,
+            quiet: true,
+            debugLog: false, // default
+          },
+          options
+        );
+        await buildFunction(basePath, file, destination, nccOptions);
+      } catch (err: any) {
+        console.warn(err.message);
+      }
     }
+  } catch (e: any) {
+    verbose && console.debug(e.message);
+    console.warn("Could not find source for app: " + basePath);
   }
 
   if (!hosting) return;
@@ -94,6 +99,6 @@ export async function buildFunction(
   fs.writeFileSync(distfile, finalCode);
 
   if (finalCode.length > MAX_LIMIT) {
-    throw new Error("Reach max function limit");
+    throw new Error("Reach max function limit: " + fileSrc);
   }
 }

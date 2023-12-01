@@ -7,6 +7,7 @@ import { run } from "./utils/run";
 
 program
   .option("-u, --uri <uri>", "mongodb URI")
+  .option("-r, --realm <realm>", "realm id")
   .option(
     "-e,  --environement <environement>",
     "environement to use",
@@ -14,8 +15,8 @@ program
   )
   .option("--port <port>", "port number", "3000")
   .option("--app [app...]", "app", [process.cwd()])
-  .action(() => {
-    //@ts-ignore
+  .action(function() {
+    //@ts-expect-error
     const options = this.opts();
 
     const port = parseInt(options.port);
@@ -23,7 +24,7 @@ program
     let uri = options.uri ?? process.env.MONGODB_URI;
 
     const apps = options.app;
-    return run(port, uri, apps, options.environement);
+    return run(port, uri, apps, options.environement, options.realm);
   });
 
 program.parse(process.argv);

@@ -43,7 +43,7 @@ program
   .option("-s --source <source>", "source to use", `${process.cwd()}/src`)
   .option("-v --verbose")
   .action(async function () {
-    // @ts-ignore
+    // @ts-expect-error
     const options = this.opts();
     const verbose = options.verbose;
 

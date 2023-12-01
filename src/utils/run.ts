@@ -8,12 +8,14 @@ import { dirname } from "node:path";
 import querystring from "node:querystring";
 import { createContext, runInContext } from "node:vm";
 import { builtins } from "../builtins";
+const  Realm = require("realm")
 
 export async function run(
   port: number,
   uri: string,
   apps: string[],
-  environement: string
+  environement: string,
+  realmId?: string
 ) {
   const server = express();
 
@@ -49,7 +51,7 @@ export async function run(
     const appName = app.split("/").pop();
     console.log(chalk.yellow(`[realtimate] ${app} => ${appName} detected`));
 
-    function runFunction(
+    async function runFunction(
       fnPath: string,
       request: express.Request | undefined = undefined,
       res: express.Response | undefined = undefined,
@@ -58,6 +60,30 @@ export async function run(
       const envValues = JSON.parse(
         fs.readFileSync(`${app}/environments/${environement}.json`).toString()
       );
+      const atlasRealm = new Realm.App({
+        id: realmId
+      });
+
+  if(request){
+    try {
+      const [method, payload] = request.headers.authorization?.split(' ') ?? [];
+      switch(method){
+        case "Basic":
+          const [login, password] = Buffer.from(payload, 'base64').toString().split(':');
+          const basiCreds = Realm.Credentials.emailPassword({
+            email: login,
+            password
+          });
+          await atlasRealm.logIn(basiCreds)
+      }
+
+    } catch(e){
+      console.warn(e);
+    }
+  }
+
+      const user = atlasRealm.currentUser;
+      console.log(user, user.id);
 
       // provide context to future functions
       const context: RealmContext = {
@@ -107,11 +133,11 @@ export async function run(
             }
           : undefined,
         user: {
-          id: "",
-          type: "system",
+          id: user?.id ?? "",
+          type: user != null ? 'normal': "system",
           data: {},
-          custom_data: {},
-          identities: [],
+          custom_data: user?.customData ?? {},
+          identities: user?.identities ?? [],
         },
         values: {
           get(name: any) {
@@ -160,13 +186,15 @@ export async function run(
 
       const fnString = fs.readFileSync(fnPath).toString();
       const fn = runInContext(fnString, vmContext);
-      return request && response
+      const ret = await (request && response
         ? fn(request, response).then(
             (functionResult: any) => functionResult ?? result
           )
-        : fn.call(null, ...args);
-    }
+        : fn.call(null, ...args));
 
+      await user?.logOut();
+      return ret;
+    }
     const functionsConfigFile = fs.readFileSync(
       `${app}/http_endpoints/config.json`
     );

@@ -14,13 +14,13 @@ program
   )
   .option("--port <port>", "port number", "3000")
   .option("--app [app...]", "app", [process.cwd()])
-  .action(() => {
-    //@ts-ignore
+  .action(function () {
+    //@ts-expect-error
     const options = this.opts();
 
     const port = parseInt(options.port);
 
-    let uri = options.uri ?? process.env.MONGODB_URI;
+    const uri = options.uri ?? process.env.MONGODB_URI;
 
     const apps = options.app;
     return run(port, uri, apps, options.environement);

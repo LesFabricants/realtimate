@@ -15,7 +15,7 @@ const debounceFile = (
   );
 };
 
-const seriesOrParallel = async <T>(array: T[], callback: (element: T) => Promise<any>, inSeries: boolean) => {
+const seriesOrParallel = async <T>(array: T[], callback: (element: T) => Promise<unknown>, inSeries: boolean) => {
   if(inSeries){
     for(const element of array){
       await callback(element);

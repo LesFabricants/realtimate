@@ -69,7 +69,7 @@ export async function run(
             case 'mongodb-atlas':
               return mongoClient;
             default:
-              return undefined as any;
+              return undefined as unknown;
             }
           },
         },
@@ -163,7 +163,7 @@ export async function run(
       const fn = runInContext(fnString, vmContext);
       return request && response
         ? fn(request, response).then(
-          (functionResult: any) => functionResult ?? result
+          (functionResult: unknown) => functionResult ?? result
         )
         : fn.call(null, ...args);
     }

@@ -15,15 +15,15 @@ const debounceFile = (
   );
 };
 
-const seriesOrParallel = async <T>(array: T[], callback: (element: T) => Promise<unknown>, inSeries: boolean) => {
+const seriesOrParallel = async <T>(array: T[], callback: (element: T) => Promise<any>, inSeries: boolean) => {
   if(inSeries){
-    for(const element of array){
+    for(let element of array){
       await callback(element);
     }
   } else {
     await Promise.all(array.map(element => callback(element)));
   }
-};
+}
 
 export {
   debounceFile,

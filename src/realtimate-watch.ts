@@ -5,24 +5,11 @@ import { FSWatcher, readdirSync, watch } from "fs";
 import { resolve } from "path";
 import { TypescriptDepencyGraph } from "typescript-source-graph";
 import { build, buildFunction } from "./utils/build";
+import { debounceFile, seriesOrParallel } from "./utils/helpers";
 import { run } from "./utils/run";
 
 config();
 
-const timer: Map<string, NodeJS.Timeout> = new Map();
-const debounceFile = (
-  file: string,
-  func: (file: string) => void,
-  timeout = 50
-) => {
-  clearTimeout(timer.get(file));
-  timer.set(
-    file,
-    setTimeout(() => {
-      func.apply(null, [file]);
-    }, timeout)
-  );
-};
 
 program
   .option(
@@ -42,6 +29,7 @@ program
   .option("--port <port>", "port number", "3000")
   .option("-s --source <source>", "source to use", `${process.cwd()}/src`)
   .option("-v --verbose")
+  .option('-i --buildInBand', 'Build the functions in band', false)
   .action(async function () {
     // @ts-ignore
     const options = this.opts();
@@ -105,11 +93,8 @@ program
       });
 
       console.time("build");
-      await Promise.all(
-        apps.map((app) =>
-          build(app.source, app.destination, false, options.verbose)
-        )
-      );
+      await seriesOrParallel(apps, async (app) => { await build(app.source, app.destination, false, options.verbose) }, options.buildInBand)
+
       console.timeEnd("build");
 
       console.log(

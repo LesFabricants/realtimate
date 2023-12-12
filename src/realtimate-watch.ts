@@ -5,7 +5,7 @@ import { FSWatcher, readdirSync, watch } from "fs";
 import { resolve } from "path";
 import { TypescriptDepencyGraph } from "typescript-source-graph";
 import { build, buildFunction } from "./utils/build";
-import { seriesOrParallel } from "./utils/helpers";
+import { debounceFile, seriesOrParallel } from "./utils/helpers";
 import { run } from "./utils/run";
 
 config();

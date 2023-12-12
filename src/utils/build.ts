@@ -10,7 +10,7 @@ export async function build(
   source: string,
   destination: string,
   hosting: boolean | string = false,
-  verbose: boolean = false,
+  verbose = false,
   options?: { minify: boolean }
 ) {
   verbose && console.log(chalk.redBright('[realtimate] building functions...'));

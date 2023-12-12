@@ -1,41 +1,41 @@
-import chalk from "chalk";
-import { program } from "commander";
-import { config } from "dotenv";
-import { FSWatcher, readdirSync, watch } from "fs";
-import { resolve } from "path";
-import { TypescriptDepencyGraph } from "typescript-source-graph";
-import { build, buildFunction } from "./utils/build";
-import { debounceFile, seriesOrParallel } from "./utils/helpers";
-import { run } from "./utils/run";
+import chalk from 'chalk';
+import { program } from 'commander';
+import { config } from 'dotenv';
+import { FSWatcher, readdirSync, watch } from 'fs';
+import { resolve } from 'path';
+import { TypescriptDepencyGraph } from 'typescript-source-graph';
+import { build, buildFunction } from './utils/build';
+import { debounceFile, seriesOrParallel } from './utils/helpers';
+import { run } from './utils/run';
 
 config();
 
 
 program
   .option(
-    "-a, --app <app>",
-    "should use all the subdirectory",
+    '-a, --app <app>',
+    'should use all the subdirectory',
     `${process.cwd()}`
   )
-  .option("-M, --no-multiple", "should list all the subdirectory")
-  .option("-B --no-build", "build options to use", true)
-  .option("-R --no-run", "run options to use", true)
-  .option("-u, --uri <uri>", "mongodb URI")
+  .option('-M, --no-multiple', 'should list all the subdirectory')
+  .option('-B --no-build', 'build options to use', true)
+  .option('-R --no-run', 'run options to use', true)
+  .option('-u, --uri <uri>', 'mongodb URI')
   .option(
-    "-e,  --environement <environement>",
-    "environement to use",
-    "development"
+    '-e,  --environement <environement>',
+    'environement to use',
+    'development'
   )
-  .option("--port <port>", "port number", "3000")
-  .option("-s --source <source>", "source to use", `${process.cwd()}/src`)
-  .option("-v --verbose")
+  .option('--port <port>', 'port number', '3000')
+  .option('-s --source <source>', 'source to use', `${process.cwd()}/src`)
+  .option('-v --verbose')
   .option('-i --buildInBand', 'Build the functions in band', false)
   .action(async function () {
-    // @ts-ignore
+    // @ts-expect-error commander use this
     const options = this.opts();
     const verbose = options.verbose;
 
-    let apps = (
+    const apps = (
       options.multiple ? readdirSync(options.app) : [options.app]
     ).map((app) => ({
       app,
@@ -45,13 +45,14 @@ program
 
     let watcher: FSWatcher;
     if (options.build) {
-      const packageJsonSource = resolve(`${options.source}`, `../package.json`);
-      verbose && console.log(`package.json: `, packageJsonSource);
+      const packageJsonSource = resolve(`${options.source}`, '../package.json');
+      verbose && console.log('package.json: ', packageJsonSource);
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const packageJson = require(packageJsonSource);
 
-      const externals = ["mongodb", ...Object.keys(packageJson.dependencies)];
+      const externals = ['mongodb', ...Object.keys(packageJson.dependencies)];
       watcher = watch(options.source, { recursive: true }, (_, filename) => {
-        debounceFile(filename!, async (filename) => {
+        debounceFile(filename!, async (filename: string) => {
           const fullpath = resolve(options.source, filename!);
           verbose &&
             console.log(
@@ -72,12 +73,12 @@ program
 
           for (const func of shouldRebuild) {
             const app = apps.find((app) => func.includes(app.source))!;
-            const split = func.split("/");
+            const split = func.split('/');
             const [file, ...basePath] = [split.pop(), ...split];
 
             try {
               await buildFunction(
-                basePath.join("/"),
+                basePath.join('/'),
                 file!,
                 app.destination,
                 {
@@ -85,17 +86,18 @@ program
                 },
                 verbose
               );
-            } catch(e: any){
-              console.warn(e?.message);
+            } catch(e: unknown){
+              if(e instanceof Error)
+                console.warn(e?.message);
             }
           }
         });
       });
 
-      console.time("build");
-      await seriesOrParallel(apps, async (app) => { await build(app.source, app.destination, false, options.verbose) }, options.buildInBand)
+      console.time('build');
+      await seriesOrParallel(apps, async (app) => { await build(app.source, app.destination, false, options.verbose); }, options.buildInBand);
 
-      console.timeEnd("build");
+      console.timeEnd('build');
 
       console.log(
         `Staring watching for changes in ${chalk.green(options.source)}`
@@ -105,7 +107,7 @@ program
     if (options.run) {
       const port = parseInt(options.port);
 
-      let uri = options.uri ?? process.env.MONGODB_URI;
+      const uri = options.uri ?? process.env.MONGODB_URI;
 
       run(
         port,
@@ -115,7 +117,7 @@ program
       );
     }
 
-    process.on("SIGINT", () => {
+    process.on('SIGINT', () => {
       watcher?.close();
       process.exit(0);
     });

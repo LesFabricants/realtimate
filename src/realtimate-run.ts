@@ -1,28 +1,28 @@
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 dotenv.config();
 
-import { program } from "commander";
+import { program } from 'commander';
 
-import { run } from "./utils/run";
+import { run } from './utils/run';
 
 program
-  .option("-u, --uri <uri>", "mongodb URI")
+  .option('-u, --uri <uri>', 'mongodb URI')
   .option(
-    "-e,  --environement <environement>",
-    "environement to use",
-    "development"
+    '-e,  --environement <environement>',
+    'environement to use',
+    'development'
   )
-  .option("--port <port>", "port number", "3000")
-  .option("--app [app...]", "app", [process.cwd()])
+  .option('--port <port>', 'port number', '3000')
+  .option('--app [app...]', 'app', [process.cwd()])
   .action(function () {
-    //@ts-expect-error
+    // @ts-expect-error commander use this
     const options = this.opts();
 
     const port = parseInt(options.port);
 
-    const uri = options.uri ?? process.env.MONGODB_URI;
+    const uri: string = options.uri ?? process.env.MONGODB_URI;
 
-    const apps = options.app;
+    const apps: string[] = options.app;
     return run(port, uri, apps, options.environement);
   });
 

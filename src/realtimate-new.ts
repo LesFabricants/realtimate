@@ -1,9 +1,9 @@
-import fs from "fs";
-import { execSync } from "child_process";
+import { execSync } from 'child_process';
+import fs from 'fs';
 
 const rootDir = process.cwd();
 
-fs.mkdirSync(rootDir + "/.github/workflows", { recursive: true });
+fs.mkdirSync(rootDir + '/.github/workflows', { recursive: true });
 fs.writeFileSync(
   `${rootDir}/.github/workflows/build.yml`,
   fs.readFileSync(`${__dirname}/assets/.github/build.template`)
@@ -13,10 +13,10 @@ fs.writeFileSync(
   fs.readFileSync(`${__dirname}/assets/.github/clean.template`)
 );
 if (!fs.existsSync(`${rootDir}/.github/workflows/apps.json`)) {
-  fs.writeFileSync(`${rootDir}/.github/workflows/apps.json`, "[]");
+  fs.writeFileSync(`${rootDir}/.github/workflows/apps.json`, '[]');
 }
 
-fs.mkdirSync(rootDir + "/src/types", { recursive: true });
+fs.mkdirSync(rootDir + '/src/types', { recursive: true });
 fs.writeFileSync(
   `${rootDir}/src/types/realm.d.ts`,
   fs.readFileSync(`${__dirname}/assets/realm.d.ts`).toString()
@@ -31,4 +31,4 @@ fs.writeFileSync(
 //   fs.readFileSync(`${__dirname}/assets/turbo.template`).toString()
 // );
 
-execSync("npm install typescript mongodb body-parser", { stdio: "inherit" });
+execSync('npm install typescript mongodb body-parser', { stdio: 'inherit' });

@@ -1,7 +1,7 @@
-import { BSON } from "mongodb";
+import { BSON } from 'mongodb';
 
 const notImplementedFn = () => {
-  throw new Error("Not implemented in realtimate");
+  throw new Error('Not implemented in realtimate');
 };
 
 export const builtins = {
@@ -62,7 +62,7 @@ export const builtins = {
     ...BSON,
     ObjectId: (x?: string) => new BSON.ObjectId(x),
   },
-  EJSON: require("ejson"),
+  EJSON: require('ejson'),
   utils: {
     crypto: {
       encrypt: notImplementedFn,

@@ -1,12 +1,12 @@
-import chalk from "chalk";
-import { program } from "commander";
-import { config } from "dotenv";
-import { FSWatcher, readdirSync, watch } from "fs";
-import { resolve } from "path";
-import { TypescriptDepencyGraph } from "typescript-source-graph";
-import { build, buildFunction } from "./utils/build";
-import { debounceFile, seriesOrParallel } from "./utils/helpers";
-import { run } from "./utils/run";
+import chalk from 'chalk';
+import { program } from 'commander';
+import { config } from 'dotenv';
+import { FSWatcher, readdirSync, watch } from 'fs';
+import { resolve } from 'path';
+import { TypescriptDepencyGraph } from 'typescript-source-graph';
+import { build, buildFunction } from './utils/build';
+import { debounceFile, seriesOrParallel } from './utils/helpers';
+import { run } from './utils/run';
 
 config();
 
@@ -26,9 +26,9 @@ program
     'environement to use',
     'development'
   )
-  .option("--port <port>", "port number", "3000")
-  .option("-s --source <source>", "source to use", `${process.cwd()}/src`)
-  .option("-v --verbose")
+  .option('--port <port>', 'port number', '3000')
+  .option('-s --source <source>', 'source to use', `${process.cwd()}/src`)
+  .option('-v --verbose')
   .option('-i --buildInBand', 'Build the functions in band', false)
   .action(async function () {
     // @ts-expect-error commander use this
@@ -94,10 +94,10 @@ program
         });
       });
 
-      console.time("build");
-      await seriesOrParallel(apps, async (app) => { await build(app.source, app.destination, false, options.verbose) }, options.buildInBand)
+      console.time('build');
+      await seriesOrParallel(apps, async (app) => { await build(app.source, app.destination, false, options.verbose); }, options.buildInBand);
 
-      console.timeEnd("build");
+      console.timeEnd('build');
 
       console.log(
         `Staring watching for changes in ${chalk.green(options.source)}`

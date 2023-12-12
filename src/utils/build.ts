@@ -42,7 +42,7 @@ export async function build(
         );
         verbose && process.stdout.write(`-> ${file}... `);
         await buildFunction(basePath, file, destination, nccOptions);
-        verbose && console.log(`Done`);
+        verbose && console.log('Done');
       } catch (err: any) {
         console.warn(err?.message);
       }

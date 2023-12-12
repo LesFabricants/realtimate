@@ -69,7 +69,7 @@ export async function run(
             case 'mongodb-atlas':
               return mongoClient;
             default:
-              return undefined as unknown;
+              return undefined as any;
             }
           },
         },

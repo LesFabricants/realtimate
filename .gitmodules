@@ -1,0 +1,6 @@
+[submodule "examples/realtimate-sample-atlas-app-service"]
+	path = examples/realtimate-sample-atlas-app-service
+	url = git@github.com:LesFabricants/realtimate-sample-atlas-app-service.git
+[submodule "examples/realtimate-sample-multiple-atlas-app-service"]
+	path = examples/realtimate-sample-multiple-atlas-app-service
+	url = git@github.com:LesFabricants/realtimate-sample-multiple-atlas-app-service.git

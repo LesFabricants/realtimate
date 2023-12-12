@@ -162,7 +162,7 @@ export async function run(
       const fnString = fs.readFileSync(fnPath).toString();
       const fn = runInContext(fnString, vmContext);
       return request && response
-        ? fn(request, response).then(
+        ? Promise.resolve(fn(request, response)).then(
           (functionResult: unknown) => functionResult ?? result
         )
         : fn.call(null, ...args);
@@ -179,7 +179,7 @@ export async function run(
       functions: {},
       triggers: {},
     };
-    if (functionsConfig.length) {
+    if (functionsConfig && functionsConfig.length) {
       for (const config of functionsConfig) {
         consoleResult.endpoints[config.route] = {
           method: config.http_method,

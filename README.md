@@ -4,19 +4,24 @@
 
 Realtimate is a command-line tool designed to facilitate the simulation of a local environment for MongoDB Realm on Atlas. This tool enables developers to test and debug their applications that utilize MongoDB Realm services without the need to interact with a live Atlas cluster. By creating a localized simulation of the Realm environment, developers can iterate faster, identify issues earlier, and ensure the reliability of their applications.
 
+you can found examples in the `/examples` folder
+
 ## Installation
 
 ### On demand
 
 Using `npx` you can run the script without installing it first:
+
 ```shell
 npx realtimate [arguments]
 ```
 
 ### Globally via `npm`
+
 ```
 npm install -g realtimate
 ```
+
 ## Usage
 
 Once installed, you can use the `realtimate` command to manage and simulate your local Realm Atlas environment.
@@ -47,7 +52,6 @@ Finally, to simulate your app, just run
 realtimate run
 ```
 
-
 ## Feedback and Contributions
 
 We welcome feedback and contributions from the community. If you encounter issues, have suggestions, or want to contribute to Realtimate, please check out our [GitHub repository](https://github.com/your-username/realtimate) and open issues or pull requests.
@@ -55,6 +59,7 @@ We welcome feedback and contributions from the community. If you encounter issue
 ## Development
 
 Checkout this repository locally, then
+
 ```shell
 npm i
 npm run watch

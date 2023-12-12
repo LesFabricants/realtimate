@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const ncc = require('@vercel/ncc');
 import chalk from 'chalk';
-import fs from 'fs';
+import fs, { existsSync } from 'fs';
 import path from 'path';
 
 const MAX_LIMIT = 10000;
@@ -14,7 +14,12 @@ export async function build(
   options?: { minify: boolean }
 ) {
   verbose && console.log(chalk.redBright('[realtimate] building functions...'));
-  const packageJsonSource = path.resolve(`${source}`, '../../package.json');
+  let packageDir = path.resolve(source);
+  while(!existsSync(path.resolve(packageDir, 'package.json'))){
+    packageDir = path.resolve(packageDir, '..');
+  }
+
+  const packageJsonSource = path.resolve(packageDir, 'package.json');
   verbose && console.log('package.json: ', packageJsonSource);
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const packageJson = require(packageJsonSource);

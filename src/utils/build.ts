@@ -24,7 +24,7 @@ export async function build(
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const packageJson = require(packageJsonSource);
 
-  const externals = ['mongodb', ...Object.keys(packageJson.dependencies)];
+  const externals = ['mongodb', ...Object.keys(packageJson.dependencies ?? {})];
   verbose && console.log('External dependencies:', chalk.gray(externals));
 
   const basePath = path.resolve(source);

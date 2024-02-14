@@ -61,7 +61,7 @@ export async function run(
       );
 
       // provide context to future functions
-      const context: RealmContext = {
+      const context: Realm['context'] = {
         services: {
           get: (name: string) => {
             // TODO: better scheming
@@ -306,3 +306,4 @@ export async function run(
     console.log(`apps listening on port ${port}`);
   });
 }
+

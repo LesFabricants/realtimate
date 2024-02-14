@@ -5,16 +5,17 @@
   "scripts": {
     "build": "npx tsc && npm run assets && npm run types",
     "assets": "copyfiles -a -u 1 src/assets/**/*.template dist",
-    "types": "copyfiles -a ./realm.d.ts dist/assets",
+    "types": "copyfiles -f ./src/types.d.ts dist",
     "watch": "npx tsc-watch --onSuccess 'npm run assets && npm run types' --onCompilationComplete 'npm install -g'",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint -c .eslintrc.json src/"
   },
-  "main": "dist/index.js",
+  "main": "dist/empty.js",
   "files": [
     "dist/",
     "misc/"
   ],
+  "types": "dist/types.d.ts",
   "bin": {
     "realtimate": "./dist/index.js"
   },

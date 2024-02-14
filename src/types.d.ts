@@ -84,5 +84,6 @@ declare module 'context' {
   global {
     const context: Realm['context'];
     const Realm: Realm;
+    const BSON: BSON;
   }
 }

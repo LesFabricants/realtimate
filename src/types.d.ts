@@ -1,5 +1,6 @@
 /// <reference types="mongodb" />
 
+type FNAME = string;
 
 type Services = {
   // add your other services here
@@ -36,7 +37,7 @@ type context = {
     action: string;
   } | undefined;
   functions: {
-    execute: (name: string, ...args: any[]) => any;
+    execute: (name: FNAME, ...args: any[]) => any;
   };
   user: {
     id: string;
@@ -70,12 +71,15 @@ type request = {
   
 };
 
-
+type callableFunction<T = unknown,V = unknown> = (...args: V[]) => Promise<T> | T;
+type httpFunction = callableFunction<void, [request, response]>;
 
 type Realm ={
   context: context;
   response: response;
   request: request;
+  callableFunction: callableFunction;
+  httpFunction: httpFunction;
 };
 
 

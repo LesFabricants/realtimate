@@ -3,6 +3,7 @@ const ncc = require('@vercel/ncc');
 import chalk from 'chalk';
 import fs, { existsSync } from 'fs';
 import path from 'path';
+import { loadSync } from 'tsconfig';
 
 const MAX_LIMIT = 10000;
 
@@ -30,8 +31,35 @@ export async function build(
   const basePath = path.resolve(source);
   verbose && console.log(`Building functions: ${chalk.green(basePath)}`);
 
+  const realtimateDir = path.resolve(basePath, '.realtimate');
+  const typesPath = path.resolve(realtimateDir,'types.d.ts');
+  const backupTsconfigPath = path.resolve(realtimateDir, '_tsconfig.json');
+  fs.mkdirSync(realtimateDir, {recursive: true});
+
+  const {path: tsPath, config} = loadSync(basePath);
+  if(!tsPath) return;
+  fs.copyFileSync(tsPath, backupTsconfigPath);
+
+
   try {
     const files = fs.readdirSync(basePath);
+
+    // function registry
+    const functions = files.map(f => f.split('.')[0]).filter(Boolean);
+    console.log(`List of available functions: ${functions.join(', ')}`);
+    // TODO: build a custom types
+   
+    const types = fs.readFileSync(path.resolve(__dirname, '..', 'types.d.ts'), {encoding: 'utf8'});
+    const localTypes = types.replace('type FNAME = string;', `type FNAME= ${functions.map(e => `"${e}"`).join('|')};`);
+    fs.writeFileSync(typesPath,localTypes , {encoding: 'utf8'});
+
+
+    
+    config.compilerOptions.types = [...(config.compilerOptions.types?.filter((opt: string) => opt.includes('.realtimate')) ?? []), typesPath];
+
+    fs.writeFileSync(tsPath, JSON.stringify(config), {encoding: 'utf8'});
+    // TODO: use the generate tsconfig path
+
     for (const file of files) {
       try {
         const nccOptions = Object.assign(
@@ -53,8 +81,11 @@ export async function build(
       }
     }
   } catch (e: any) {
+
     verbose && console.debug(e?.message);
     console.warn('Could not find source for app: ' + basePath);
+  } finally {
+    fs.copyFileSync(backupTsconfigPath, tsPath);
   }
 
   if (!hosting) return;

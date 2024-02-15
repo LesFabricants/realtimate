@@ -3,7 +3,7 @@ const ncc = require('@vercel/ncc');
 import chalk from 'chalk';
 import fs, { existsSync } from 'fs';
 import path from 'path';
-import { loadSync } from 'tsconfig';
+import { Backup } from './helpers';
 
 const MAX_LIMIT = 10000;
 
@@ -14,6 +14,10 @@ export async function build(
   verbose = false,
   options?: { minify: boolean }
 ) {
+  const basePath = path.resolve(source);
+  const realtimateDir = path.resolve(basePath, '.realtimate');
+  const backup = new Backup(realtimateDir);
+  
   verbose && console.log(chalk.redBright('[realtimate] building functions...'));
   let packageDir = path.resolve(source);
   while(!existsSync(path.resolve(packageDir, 'package.json'))){
@@ -28,39 +32,35 @@ export async function build(
   const externals = ['mongodb', ...Object.keys(packageJson.dependencies ?? {})];
   verbose && console.log('External dependencies:', chalk.gray(externals));
 
-  const basePath = path.resolve(source);
   verbose && console.log(`Building functions: ${chalk.green(basePath)}`);
 
-  const realtimateDir = path.resolve(basePath, '.realtimate');
   const typesPath = path.resolve(realtimateDir,'types.d.ts');
-  const backupTsconfigPath = path.resolve(realtimateDir, '_tsconfig.json');
   fs.mkdirSync(realtimateDir, {recursive: true});
-
-  const {path: tsPath, config} = loadSync(basePath);
-  if(!tsPath) return;
-  fs.copyFileSync(tsPath, backupTsconfigPath);
-
 
   try {
     const files = fs.readdirSync(basePath);
 
+    const functionFiles = files
+      .filter(f => f.indexOf('.') != -1 && (f.endsWith('.ts') || f.endsWith('.js')));
+      
+
     // function registry
-    const functions = files.map(f => f.split('.')[0]).filter(Boolean);
-    console.log(`List of available functions: ${functions.join(', ')}`);
-    // TODO: build a custom types
+    const config = fs.readFileSync(path.resolve(destination,'functions', 'config.json'), {encoding: 'utf8'});
+    const configFunctions = JSON.parse(config).map((f: any) => f.name);
+
+
+    console.log(`functions from config: ${configFunctions.join(', ')}`);
+    console.log(`functions from src: ${functionFiles.join(', ')}`);
+
+    const availableFunctions = functionFiles.map(f => `"${f.split('.')[0]}"`);
+    // TODO: generate config if config missing from src
+
    
     const types = fs.readFileSync(path.resolve(__dirname, '..', 'types.d.ts'), {encoding: 'utf8'});
-    const localTypes = types.replace('type FNAME = string;', `type FNAME= ${functions.map(e => `"${e}"`).join('|')};`);
-    fs.writeFileSync(typesPath,localTypes , {encoding: 'utf8'});
+    const localTypes = types.replace('type FNAME = string;', `type FNAME = ${availableFunctions.join('|')};`);
+    fs.writeFileSync(typesPath, localTypes , {encoding: 'utf8'});
 
-
-    
-    config.compilerOptions.types = [...(config.compilerOptions.types?.filter((opt: string) => opt.includes('.realtimate')) ?? []), typesPath];
-
-    fs.writeFileSync(tsPath, JSON.stringify(config), {encoding: 'utf8'});
-    // TODO: use the generate tsconfig path
-
-    for (const file of files) {
+    for (const file of functionFiles) {
       try {
         const nccOptions = Object.assign(
           {
@@ -85,7 +85,7 @@ export async function build(
     verbose && console.debug(e?.message);
     console.warn('Could not find source for app: ' + basePath);
   } finally {
-    fs.copyFileSync(backupTsconfigPath, tsPath);
+    backup.restore();
   }
 
   if (!hosting) return;

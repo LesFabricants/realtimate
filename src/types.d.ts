@@ -51,6 +51,21 @@ type context = {
   };
 };
 
+type utils = {
+   crypto: {
+      encrypt: () => void,
+      decrypt: () => void,
+      sign: () => void,
+      verify: () => void,
+      hmac: () => void,
+      hash: () => void,
+    },
+    jwt: {
+      encode: () => void,
+      decode: () => void,
+    },
+}
+
 
 
 type BSON  = {
@@ -89,5 +104,7 @@ declare module 'context' {
     const context: Realm['context'];
     const Realm: Realm;
     const BSON: BSON;
+    const utils: utils;
+    const EJSON: typeof import('ejson');
   }
 }

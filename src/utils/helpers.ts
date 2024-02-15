@@ -1,3 +1,5 @@
+import { copyFileSync } from 'fs';
+import { basename, resolve } from 'path';
 
 
 const timer: Map<string, NodeJS.Timeout> = new Map();
@@ -25,7 +27,31 @@ const seriesOrParallel = async <T>(array: T[], callback: (element: T) => Promise
   }
 };
 
+class Backup {
+  private bakMap: Record<string, string> = {};
+
+  constructor(private backupDir: string){}
+
+  backup(file: string){
+    const fileName = basename(file);
+
+
+    copyFileSync(file, resolve(this.backupDir, fileName));
+    this.bakMap[file] = this.backupDir;
+  }
+
+  restore(){
+    for(const key in this.bakMap){
+      const fileName = basename(key);
+      copyFileSync(resolve(this.backupDir, fileName), key);
+      delete this.bakMap[key];
+    }
+  }
+}
+
 export {
+  Backup,
   debounceFile,
   seriesOrParallel
 };
+

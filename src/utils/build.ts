@@ -6,7 +6,6 @@ import path from 'path';
 import { Backup } from './helpers';
 
 import { Node, Project } from 'ts-morph';
-import * as ts from 'typescript';
 
 const MAX_LIMIT = 10000;
 
@@ -14,6 +13,7 @@ export async function build(
   source: string,
   destination: string,
   hosting: boolean | string = false,
+  prebuild = true,
   verbose = false,
   options?: { minify: boolean }
 ) {
@@ -42,28 +42,16 @@ export async function build(
 
   try {
     const files = fs.readdirSync(basePath);
-
     const functionFiles = files
       .filter(f => f.indexOf('.') != -1 && (f.endsWith('.ts') || f.endsWith('.js')));
-      
 
-    // function registry
-    const config = fs.readFileSync(path.resolve(destination,'functions', 'config.json'), {encoding: 'utf8'});
-    const configFunctions = JSON.parse(config).map((f: any) => f.name);
+    if(prebuild){
+      preBuildCheck(destination, functionFiles, basePath, typesPath);
+    } else {
+      console.warn('skipping prebuild checks');
+    }
 
-
-    console.log(`functions from config: ${configFunctions.join(', ')}`);
-    console.log(`functions from src: ${functionFiles.join(', ')}`);
-
-    const availableFunctions = functionFiles.map(f =>  getFunctionTypeDeclaration(basePath, f));
-   
-    const types = fs.readFileSync(path.resolve(__dirname, '..', 'types.d.ts'), {encoding: 'utf8'});
-    const localTypes = types.replace('type FNAME = (name: string, ...args: any[]) => any;', `type FNAME = ${availableFunctions.join(' & ')};`);
-    fs.writeFileSync(typesPath, localTypes , {encoding: 'utf8'});
-    const tsConfigPath = ts.findConfigFile(basePath, ts.sys.fileExists);
-    if(!tsConfigPath) throw new Error('missing tsconfig.json');
-    const tsConfig = ts.readConfigFile(tsConfigPath, ts.sys.readFile);
-    const {options} = ts.parseJsonConfigFileContent(tsConfig, ts.sys, basePath);
+  
     for (const file of functionFiles) {
       try {
        
@@ -108,6 +96,30 @@ export async function build(
   } else {
     console.warn('No hosting files detected');
   }
+}
+
+function preBuildCheck(destination: string, functionFiles: string[], basePath: string, typesPath: string) {
+  const fnConfigPath = path.resolve(destination, 'functions', 'config.json');
+  // function registry
+  const config = JSON.parse(fs.readFileSync(fnConfigPath, { encoding: 'utf8' })) as any[];
+  const configFunctions = config.map((f: any) => f.name) as string[];
+
+
+  const missingFunctions = functionFiles.map(f=> f.split('.')[0]).filter(f => !configFunctions.includes(f));
+  console.log(missingFunctions);
+  if (missingFunctions.length) {
+    console.warn(`"${missingFunctions.join(',')}" are missing from ${fnConfigPath}, they will be added as private`);
+    config.push(...missingFunctions.map((f) => ({
+      name: f,
+      private: true
+    })));
+    fs.writeFileSync(fnConfigPath, JSON.stringify(config, undefined, 2), { encoding: 'utf8' });
+  }
+
+  const functionDeclarations = functionFiles.map(f => getFunctionTypeDeclaration(basePath, f));
+  const types = fs.readFileSync(path.resolve(__dirname, '..', 'types.d.ts'), { encoding: 'utf8' });
+  const localTypes = types.replace('type FNAME = (name: string, ...args: any[]) => any;', `type FNAME = ${functionDeclarations.join(' & ')};`);
+  fs.writeFileSync(typesPath, localTypes, { encoding: 'utf8' });
 }
 
 function getFunctionTypeDeclaration(basePath: string, file: string) {

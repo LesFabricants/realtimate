@@ -128,7 +128,7 @@ function getFunctionTypeDeclaration(basePath: string, file: string) {
   const project = new Project();
   project.addSourceFilesAtPaths(sourcePath);
   const expo = project.getSourceFileOrThrow(sourcePath);
-  const fn = expo.getExportAssignment(Boolean)?.getFirstChild((node) => Node.isFunctionExpression(node));
+  const fn = expo.getExportAssignment(Boolean)?.getFirstChild((node) => Node.isFunctionExpression(node) || Node.isCallExpression(node));
   if (fn == undefined) {
     throw new Error(`${file} is missing an export = function() {} statement`);
   }

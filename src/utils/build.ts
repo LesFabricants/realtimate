@@ -5,6 +5,9 @@ import fs, { existsSync } from 'fs';
 import path from 'path';
 import { Backup } from './helpers';
 
+import { Node, Project } from 'ts-morph';
+import * as ts from 'typescript';
+
 const MAX_LIMIT = 10000;
 
 export async function build(
@@ -52,16 +55,18 @@ export async function build(
     console.log(`functions from config: ${configFunctions.join(', ')}`);
     console.log(`functions from src: ${functionFiles.join(', ')}`);
 
-    const availableFunctions = functionFiles.map(f => `"${f.split('.')[0]}"`);
-    // TODO: generate config if config missing from src
-
+    const availableFunctions = functionFiles.map(f =>  getFunctionTypeDeclaration(basePath, f));
    
     const types = fs.readFileSync(path.resolve(__dirname, '..', 'types.d.ts'), {encoding: 'utf8'});
-    const localTypes = types.replace('type FNAME = string;', `type FNAME = ${availableFunctions.join('|')};`);
+    const localTypes = types.replace('type FNAME = (name: string, ...args: any[]) => any;', `type FNAME = ${availableFunctions.join(' & ')};`);
     fs.writeFileSync(typesPath, localTypes , {encoding: 'utf8'});
-
+    const tsConfigPath = ts.findConfigFile(basePath, ts.sys.fileExists);
+    if(!tsConfigPath) throw new Error('missing tsconfig.json');
+    const tsConfig = ts.readConfigFile(tsConfigPath, ts.sys.readFile);
+    const {options} = ts.parseJsonConfigFileContent(tsConfig, ts.sys, basePath);
     for (const file of functionFiles) {
       try {
+       
         const nccOptions = Object.assign(
           {
             externals,
@@ -103,6 +108,22 @@ export async function build(
   } else {
     console.warn('No hosting files detected');
   }
+}
+
+function getFunctionTypeDeclaration(basePath: string, file: string) {
+  const sourcePath = path.resolve(basePath, file);
+  const functionName = file.split('.')[0];
+  const project = new Project();
+  project.addSourceFilesAtPaths(sourcePath);
+  const expo = project.getSourceFileOrThrow(sourcePath);
+  const fn = expo.getExportAssignment(Boolean)?.getFirstChild((node) => Node.isFunctionExpression(node));
+  if (fn == undefined) {
+    throw new Error(`${file} is missing an export = function() {} statement`);
+  }
+
+  const returnType = fn.getType().getCallSignatures()[0].getReturnType().getText(undefined);
+  const argsTypes = fn.getType().getCallSignatures()[0].getParameters().map(p => p.getTypeAtLocation(fn).getText(undefined));
+  return `((name: '${functionName}', ${argsTypes.map((type, index) => `_${index}: ${type}`).join(', ')}) => ${returnType})`;
 }
 
 export async function buildFunction(

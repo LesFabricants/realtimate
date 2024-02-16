@@ -1,6 +1,6 @@
 /// <reference types="mongodb" />
 
-type FNAME = string;
+type FNAME = (name: string, ...args: any[]) => any;
 
 type Services = {
   // add your other services here
@@ -37,7 +37,7 @@ type context = {
     action: string;
   } | undefined;
   functions: {
-    execute: (name: FNAME, ...args: any[]) => any;
+    execute: FNAME;
   };
   user: {
     id: string;

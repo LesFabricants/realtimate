@@ -13,7 +13,7 @@ program
     'development'
   )
   .option('--port <port>', 'port number', '3000')
-  .option('--app [app...]', 'app', [process.cwd()])
+  .option('-a, --app [app...]', 'app', [process.cwd()])
   .action(function () {
     // @ts-expect-error commander use this
     const options = this.opts();

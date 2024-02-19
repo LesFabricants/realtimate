@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "description": "An Atlas Realm Build Environment",
   "scripts": {
-    "prebuild": "barrelsby -d src/lib -D",
+    "prebuild": "barrelsby -d src/lib -D -q",
     "build": "npx tsc",
     "postbuild": "npm run assets && npm run types",
     "assets": "copyfiles -a -u 1 src/bin/assets/**/*.template dist",

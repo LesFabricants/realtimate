@@ -3,7 +3,7 @@ type ResponseType<T> = {
   body: T,
   headers?: Record<string, string>
 }
-export function httpWrapper<T>(fn: (request: Realm['request'], options?: never) => Promise<ResponseType<T>> | ResponseType<T>){
+export function httpFunction<T>(fn: (request: Realm['request'], options?: never) => Promise<ResponseType<T>> | ResponseType<T>){
   return async (request: Realm['request'], response: Realm['response'])=> {
     try {
       const result = await fn(request);

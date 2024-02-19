@@ -117,7 +117,7 @@ function preBuildCheck(destination: string, functionFiles: string[], basePath: s
   }
 
   const functionDeclarations = functionFiles.map(f => getFunctionTypeDeclaration(basePath, f));
-  const types = fs.readFileSync(path.resolve(__dirname, '..', 'types.d.ts'), { encoding: 'utf8' });
+  const types = fs.readFileSync(path.resolve(__dirname, '..', '..', 'types.d.ts'), { encoding: 'utf8' });
   const localTypes = types.replace('type FNAME = (name: string, ...args: any[]) => any;', `type FNAME = ${functionDeclarations.join(' & ')};`);
   fs.writeFileSync(typesPath, localTypes, { encoding: 'utf8' });
 }

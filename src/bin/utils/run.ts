@@ -168,12 +168,20 @@ export async function run(
         : fn.call(null, ...args);
     }
 
-    const functionsConfigFile = fs.readFileSync(
-      `${app}/http_endpoints/config.json`
-    );
+    const getFunctionConfigFile = () => {
+      let configFolder;
+      if(fs.existsSync(`${app}/http_endpoints`)){
+        configFolder = `http_endpoints`
+      }else{
+        configFolder = `https_endpoints`
+      }
+      return fs.readFileSync(`${app}/${configFolder}/config.json`);
+    }
+
     const functionsConfig = JSON.parse(
-      functionsConfigFile as unknown as string
+      getFunctionConfigFile() as unknown as string
     );
+
     const consoleResult: any = {
       endpoints: {},
       functions: {},

@@ -184,7 +184,7 @@ export async function run(
       const configFilePath = `${app}/${configFolder}/config.json`;
 
       if (!fs.existsSync(configFilePath)) {
-        const errMsg =           chalk.red.bold('ERROR: ') +
+        const errMsg = chalk.red.bold('ERROR: ') +
           chalk.yellow('Configuration file not found.\n') +
           chalk.white(`The file "config.json" in the folder "${configFolder}" is missing. Please make sure this file is present in your application directory and it is not corrupted.\n`) +
           chalk.cyan('You can refer to the example at ') +

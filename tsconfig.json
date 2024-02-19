@@ -3,6 +3,7 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
+    "declaration": true,
     "strict": true,
     "target": "es2021",
     "module": "commonjs",

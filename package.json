@@ -3,22 +3,23 @@
   "version": "0.0.0",
   "description": "An Atlas Realm Build Environment",
   "scripts": {
+    "prebuild": "barrelsby -d src/lib -D -q",
     "build": "npx tsc",
     "postbuild": "npm run assets && npm run types",
-    "assets": "copyfiles -a -u 1 src/assets/**/*.template dist",
+    "assets": "copyfiles -a -u 1 src/bin/assets/**/*.template dist",
     "types": "copyfiles -f ./src/types.d.ts dist",
     "watch": "npx tsc-watch --onSuccess 'npm run postbuild'",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint -c .eslintrc.json src/"
   },
-  "main": "dist/empty.js",
+  "main": "./dist/lib/index.js",
   "files": [
     "dist/",
     "misc/"
   ],
-  "types": "dist/types.d.ts",
+  "types": "dist/lib/index.d.ts",
   "bin": {
-    "realtimate": "./dist/index.js"
+    "realtimate": "./dist/bin/index.js"
   },
   "repository": "github:LesFabricants/realtimate",
   "author": "Les Fabricants",
@@ -52,6 +53,7 @@
     "@types/node": "^20.4.9",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
+    "barrelsby": "^2.8.1",
     "copyfiles": "^2.4.1",
     "eslint": "^8.55.0",
     "eslint-config-standard-with-typescript": "^37.0.0",

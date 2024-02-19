@@ -12,6 +12,7 @@ program
   )
   .option('-u, --unminify', 'unminify the target file')
   .option('-i --buildInBand', 'Build the functions in band', false)
+  .option('--no-prebuild', 'disable prebuild check', true)
 
   .option('-v, --verbose')
   .action(function () {
@@ -29,8 +30,9 @@ program
           `${process.cwd()}/src/${app.name}`,
           `${process.cwd()}/apps/${app.name}`,
           `${process.cwd()}/hosting/${app.name}/dist`,
-          true,
-          { minify: true }
+          false,
+          options.verbose,
+          { minify: !options.unminify }
         ), options.buildInBand);
       
     }
@@ -39,6 +41,7 @@ program
       options.source,
       options.destination,
       options.hosting,
+      options.prebuild,
       options.verbose,
       {
         minify: !options.unminify,

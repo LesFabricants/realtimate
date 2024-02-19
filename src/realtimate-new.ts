@@ -16,11 +16,11 @@ if (!fs.existsSync(`${rootDir}/.github/workflows/apps.json`)) {
   fs.writeFileSync(`${rootDir}/.github/workflows/apps.json`, '[]');
 }
 
-fs.mkdirSync(rootDir + '/src/types', { recursive: true });
-fs.writeFileSync(
-  `${rootDir}/src/types/realm.d.ts`,
-  fs.readFileSync(`${__dirname}/assets/realm.d.ts`).toString()
-);
+// fs.mkdirSync(rootDir + '/src/types', { recursive: true });
+// fs.writeFileSync(
+//   `${rootDir}/src/types/realm.d.ts`,
+//   fs.readFileSync(`${__dirname}/assets/realm.d.ts`).toString()
+// );
 
 fs.writeFileSync(
   `${rootDir}/tsconfig.json`,

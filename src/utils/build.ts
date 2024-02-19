@@ -3,6 +3,9 @@ const ncc = require('@vercel/ncc');
 import chalk from 'chalk';
 import fs, { existsSync } from 'fs';
 import path from 'path';
+import { Backup } from './helpers';
+
+import { Node, Project, Type, TypeParameter } from 'ts-morph';
 
 const MAX_LIMIT = 10000;
 
@@ -10,9 +13,14 @@ export async function build(
   source: string,
   destination: string,
   hosting: boolean | string = false,
+  prebuild = true,
   verbose = false,
   options?: { minify: boolean }
 ) {
+  const basePath = path.resolve(source);
+  const realtimateDir = path.resolve(basePath, '.realtimate');
+  const backup = new Backup(realtimateDir);
+  
   verbose && console.log(chalk.redBright('[realtimate] building functions...'));
   let packageDir = path.resolve(source);
   while(!existsSync(path.resolve(packageDir, 'package.json'))){
@@ -27,13 +35,26 @@ export async function build(
   const externals = ['mongodb', ...Object.keys(packageJson.dependencies ?? {})];
   verbose && console.log('External dependencies:', chalk.gray(externals));
 
-  const basePath = path.resolve(source);
   verbose && console.log(`Building functions: ${chalk.green(basePath)}`);
+
+  const typesPath = path.resolve(realtimateDir,'types.d.ts');
+  fs.mkdirSync(realtimateDir, {recursive: true});
 
   try {
     const files = fs.readdirSync(basePath);
-    for (const file of files) {
+    const functionFiles = files
+      .filter(f => f.indexOf('.') != -1 && (f.endsWith('.ts') || f.endsWith('.js')));
+
+    if(prebuild){
+      preBuildCheck(destination, functionFiles, basePath, typesPath);
+    } else {
+      console.warn('skipping prebuild checks');
+    }
+
+  
+    for (const file of functionFiles) {
       try {
+       
         const nccOptions = Object.assign(
           {
             externals,
@@ -53,8 +74,11 @@ export async function build(
       }
     }
   } catch (e: any) {
+
     verbose && console.debug(e?.message);
     console.warn('Could not find source for app: ' + basePath);
+  } finally {
+    backup.restore();
   }
 
   if (!hosting) return;
@@ -72,6 +96,57 @@ export async function build(
   } else {
     console.warn('No hosting files detected');
   }
+}
+
+function preBuildCheck(destination: string, functionFiles: string[], basePath: string, typesPath: string) {
+  const fnConfigPath = path.resolve(destination, 'functions', 'config.json');
+  // function registry
+  const config = JSON.parse(fs.readFileSync(fnConfigPath, { encoding: 'utf8' })) as any[];
+  const configFunctions = config.map((f: any) => f.name) as string[];
+
+
+  const missingFunctions = functionFiles.map(f=> f.split('.')[0]).filter(f => !configFunctions.includes(f));
+  if (missingFunctions.length) {
+    console.warn(`"${missingFunctions.join(',')}" are missing from ${fnConfigPath}, they will be added as private`);
+    config.push(...missingFunctions.map((f) => ({
+      name: f,
+      private: true
+    })));
+    fs.writeFileSync(fnConfigPath, JSON.stringify(config, undefined, 2), { encoding: 'utf8' });
+  }
+  
+  const functionDeclarations = functionFiles.map(f => getFunctionTypeDeclaration(basePath, f));
+  const types = fs.readFileSync(path.resolve(__dirname, '..', 'types.d.ts'), { encoding: 'utf8' });
+  const localTypes = types.replace('type FNAME = (name: string, ...args: any[]) => any;', `type FNAME = ${functionDeclarations.join(' & ')};`);
+  fs.writeFileSync(typesPath, localTypes, { encoding: 'utf8' });
+}
+
+function getFunctionTypeDeclaration(basePath: string, file: string) {
+  const sourcePath = path.resolve(basePath, file);
+  const functionName = file.split('.')[0];
+  const project = new Project();
+  project.addSourceFilesAtPaths(sourcePath);
+  const expo = project.getSourceFileOrThrow(sourcePath);
+  const fn = expo.getExportAssignment(Boolean)?.getFirstChild((node) => Node.isFunctionExpression(node) || Node.isCallExpression(node));
+  if (fn == undefined) {
+    throw new Error(`${file} is missing an export = function() {} statement`);
+  }
+
+  const returnType = fn.getType().getCallSignatures()[0].getReturnType().getText(undefined);
+  const genericType =fn.getType().getCallSignatures()[0].getTypeParameters().map(generateTypeParameterSignature);
+  
+  const argsTypes = fn.getType().getCallSignatures()[0].getParameters().map((p) => p.getValueDeclaration()?.getFullText().split('=')[0]);
+  return `(${genericType.length ? `<${genericType.join(', ')}>` : ''}(name: '${functionName}', ${argsTypes.join(', ')}) => ${returnType})`;
+}
+
+function generateTypeParameterSignature(type: TypeParameter) : string | undefined {
+  const constraint = type.getConstraint();
+  const def = type.getDefault();
+  return `${type.getText()}${constraint ? ` extends ${generateTypeSignature(constraint)}` : ''}${def ? ` = ${generateTypeSignature(def)}` : ''}`;
+}
+
+function generateTypeSignature(type: Type): string{
+  return `${type.getText()}`;
 }
 
 export async function buildFunction(

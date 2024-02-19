@@ -193,7 +193,7 @@ export async function run(
           chalk.white(' for more information.')
         );
       }
-      return fs.readFileSync(configFilePath);
+      return fs.readFileSync(configFilePath, {encoding: 'utf8'});
     };
 
     const functionsConfig = JSON.parse(

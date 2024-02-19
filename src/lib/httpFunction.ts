@@ -3,10 +3,23 @@ type ResponseType<T> = {
   body: T,
   headers?: Record<string, string>
 }
-export function httpFunction<T>(fn: (request: Realm['request'], options?: never) => Promise<ResponseType<T>> | ResponseType<T>){
+
+type Options<T> =  {
+  authenticate?: string | 
+  ((request: Realm['request']) => Promise<T | HttpError> | T | HttpError)
+}
+export function httpFunction<T, V>(fn: (request: Realm['request'], user?: V | undefined) => Promise<ResponseType<T>> | ResponseType<T>, options?: Options<V>){
   return async (request: Realm['request'], response: Realm['response'])=> {
     try {
-      const result = await fn(request);
+      let user: V | undefined = undefined;
+      
+      if(options?.authenticate) {
+        const result =  typeof options.authenticate == 'function' ?  await options.authenticate(request) : await context.functions.execute(options.authenticate, request);
+        if(result instanceof HttpError) throw result;
+        user = result;
+      }
+
+      const result = await fn(request, user);
       response.setStatusCode(result.statusCode ?? 200);
       for(const header in result.headers) {
         response.addHeader(header, result.headers[header]);
@@ -23,10 +36,20 @@ export function httpFunction<T>(fn: (request: Realm['request'], options?: never)
 
 
     } catch(err){
-      console.error(err);
-      response.setStatusCode(500);
-      response.setBody('Something wrong happened');
+      if(err instanceof HttpError){
+        response.setBody(err.message);
+        response.setStatusCode(err.statusCode);
+      } else {
+        response.setStatusCode(500);
+        response.setBody('Something wrong happened');
+      }
     }
 
   };
+}
+
+export class HttpError extends Error {
+  constructor(public statusCode: number, public message: string){
+    super(message);
+  }
 }

@@ -192,6 +192,7 @@ export async function run(
           chalk.cyan.underline('https://github.com/LesFabricants/realtimate-sample-atlas-app-service/tree/120b3faf0daafb60d65936106c43439a438bd771') +
           chalk.white(' for more information.')
         );
+        process.exit(1);
       }
       return fs.readFileSync(configFilePath, {encoding: 'utf8'});
     };

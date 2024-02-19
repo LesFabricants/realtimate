@@ -169,14 +169,32 @@ export async function run(
     }
 
     const getFunctionConfigFile = () => {
-      let configFolder;
-      if(fs.existsSync(`${app}/http_endpoints`)){
-        configFolder = `http_endpoints`
-      }else{
-        configFolder = `https_endpoints`
+      const hasHttpsEndpointsFolder = fs.existsSync(`${app}/https_endpoints`);
+      const hasHttpEndpointsFolder = fs.existsSync(`${app}/http_endpoints`);
+      if(!hasHttpEndpointsFolder && !hasHttpsEndpointsFolder) {
+        console.error(chalk.red.bold('ERROR: ') +
+          chalk.yellow('Endpoints config not found.\n') +
+          chalk.white('Please check your app folder and make sure a folder named "http_endpoints" or "https_endpoints" is present. \n') +
+          chalk.cyan('You can refer to the example at ') +
+          chalk.cyan.underline('https://github.com/LesFabricants/realtimate-sample-atlas-app-service/tree/120b3faf0daafb60d65936106c43439a438bd771') +
+          chalk.white(' for more information.'));
+        process.exit(1);
       }
-      return fs.readFileSync(`${app}/${configFolder}/config.json`);
-    }
+      const configFolder = hasHttpsEndpointsFolder ? 'https_endpoints' : 'http_endpoints';
+      const configFilePath = `${app}/${configFolder}/config.json`;
+
+      if (!fs.existsSync(configFilePath)) {
+        console.error(
+          chalk.red.bold('ERROR: ') +
+          chalk.yellow('Configuration file not found.\n') +
+          chalk.white(`The file "config.json" in the folder "${configFolder}" is missing. Please make sure this file is present in your application directory and it is not corrupted.\n`) +
+          chalk.cyan('You can refer to the example at ') +
+          chalk.cyan.underline('https://github.com/LesFabricants/realtimate-sample-atlas-app-service/tree/120b3faf0daafb60d65936106c43439a438bd771') +
+          chalk.white(' for more information.')
+        );
+      }
+      return fs.readFileSync(configFilePath);
+    };
 
     const functionsConfig = JSON.parse(
       getFunctionConfigFile() as unknown as string

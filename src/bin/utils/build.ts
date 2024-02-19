@@ -5,7 +5,7 @@ import fs, { existsSync } from 'fs';
 import path from 'path';
 import { Backup } from './helpers';
 
-import { Node, Project } from 'ts-morph';
+import { Node, Project, Type, TypeParameter } from 'ts-morph';
 
 const MAX_LIMIT = 10000;
 
@@ -106,7 +106,6 @@ function preBuildCheck(destination: string, functionFiles: string[], basePath: s
 
 
   const missingFunctions = functionFiles.map(f=> f.split('.')[0]).filter(f => !configFunctions.includes(f));
-  console.log(missingFunctions);
   if (missingFunctions.length) {
     console.warn(`"${missingFunctions.join(',')}" are missing from ${fnConfigPath}, they will be added as private`);
     config.push(...missingFunctions.map((f) => ({
@@ -115,7 +114,7 @@ function preBuildCheck(destination: string, functionFiles: string[], basePath: s
     })));
     fs.writeFileSync(fnConfigPath, JSON.stringify(config, undefined, 2), { encoding: 'utf8' });
   }
-
+  
   const functionDeclarations = functionFiles.map(f => getFunctionTypeDeclaration(basePath, f));
   const types = fs.readFileSync(path.resolve(__dirname, '..', '..', 'types.d.ts'), { encoding: 'utf8' });
   const localTypes = types.replace('type FNAME = (name: string, ...args: any[]) => any;', `type FNAME = ${functionDeclarations.join(' & ')};`);
@@ -134,8 +133,20 @@ function getFunctionTypeDeclaration(basePath: string, file: string) {
   }
 
   const returnType = fn.getType().getCallSignatures()[0].getReturnType().getText(undefined);
-  const argsTypes = fn.getType().getCallSignatures()[0].getParameters().map(p => p.getTypeAtLocation(fn).getText(undefined));
-  return `((name: '${functionName}', ${argsTypes.map((type, index) => `_${index}: ${type}`).join(', ')}) => ${returnType})`;
+  const genericType =fn.getType().getCallSignatures()[0].getTypeParameters().map(generateTypeParameterSignature);
+  
+  const argsTypes = fn.getType().getCallSignatures()[0].getParameters().map((p) => p.getValueDeclaration()?.getFullText().split('=')[0]);
+  return `(${genericType.length ? `<${genericType.join(', ')}>` : ''}(name: '${functionName}', ${argsTypes.join(', ')}) => ${returnType})`;
+}
+
+function generateTypeParameterSignature(type: TypeParameter) : string | undefined {
+  const constraint = type.getConstraint();
+  const def = type.getDefault();
+  return `${type.getText()}${constraint ? ` extends ${generateTypeSignature(constraint)}` : ''}${def ? ` = ${generateTypeSignature(def)}` : ''}`;
+}
+
+function generateTypeSignature(type: Type): string{
+  return `${type.getText()}`;
 }
 
 export async function buildFunction(

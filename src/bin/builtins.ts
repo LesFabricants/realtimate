@@ -1,3 +1,4 @@
+import { jwtDecode } from 'jwt-decode';
 import { BSON } from 'mongodb';
 
 const notImplementedFn = () => {
@@ -74,7 +75,7 @@ export const builtins = {
     },
     jwt: {
       encode: notImplementedFn,
-      decode: notImplementedFn,
+      decode: jwtDecode,
     },
   },
   setTimeout,

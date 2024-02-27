@@ -127,16 +127,18 @@ function getFunctionTypeDeclaration(basePath: string, file: string) {
   const project = new Project();
   project.addSourceFilesAtPaths(sourcePath);
   const expo = project.getSourceFileOrThrow(sourcePath);
-  const fn = expo.getExportAssignment(Boolean)?.getFirstChild((node) => Node.isFunctionExpression(node) || Node.isCallExpression(node));
+  const fn = expo.getExportAssignment(Boolean)?.getFirstChild((node) => Node.isFunctionExpression(node) || Node.isCallExpression(node) || Node.isArrowFunction(node));
   if (fn == undefined) {
     throw new Error(`${file} is missing an export = function() {} statement`);
   }
 
   const returnType = fn.getType().getCallSignatures()[0].getReturnType().getText(undefined);
-  const genericType =fn.getType().getCallSignatures()[0].getTypeParameters().map(generateTypeParameterSignature);
+  const genericType = fn.getType().getCallSignatures()[0].getTypeParameters().map(generateTypeParameterSignature);
   
-  const argsTypes = fn.getType().getCallSignatures()[0].getParameters().map((p) => p.getValueDeclaration()?.getFullText().split('=')[0]);
-  return `(${genericType.length ? `<${genericType.join(', ')}>` : ''}(name: '${functionName}', ${argsTypes.join(', ')}) => ${returnType})`;
+  const argsTypes = fn.getType().getCallSignatures()[0].getParameters().map((p) => {
+    return p.getTypeAtLocation(fn).getText();
+  });
+  return `(${genericType.length ? `<${genericType.join(', ')}>` : ''}(name: '${functionName}', ${argsTypes.map((a, i) => `_${i}: ${a}`).join(', ')}) => ${returnType})`;
 }
 
 function generateTypeParameterSignature(type: TypeParameter) : string | undefined {

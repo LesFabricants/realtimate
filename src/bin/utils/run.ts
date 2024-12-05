@@ -169,7 +169,7 @@ export async function run(
     }
 
     const functionsConfigFile = fs.readFileSync(
-      `${app}/http_endpoints/config.json`
+      `${app}/https_endpoints/config.json`
     );
     const functionsConfig = JSON.parse(
       functionsConfigFile as unknown as string

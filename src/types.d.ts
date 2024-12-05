@@ -1,6 +1,6 @@
 /// <reference types="mongodb" />
 
-type FNAME = (name: string, ...args: any[]) => any;
+type realmFunction = (name: string, ...args: any[]) => any;
 
 type Services = {
   // add your other services here
@@ -37,7 +37,7 @@ type context = {
     action: string;
   } | undefined;
   functions: {
-    execute: FNAME;
+    execute: realmFunction;
   };
   user: {
     id: string;
@@ -96,11 +96,18 @@ type authEvent = {
   providers: Record<string, string>;
 };
 
+type changeEvent = {
+  documentKey: { _id: BSON['ObjectId'] };
+  operationType: 'insert' | 'update' | 'replace' | 'delete';
+  fullDocument: object;
+  fullDocumentBeforeChange: object;
+  updateDescription: {updatedfields: any};
+};
 
 type callableFunction<T = unknown,V = unknown> = (...args: V[]) => Promise<T> | T;
 type httpFunction = callableFunction<void, [request, response]>;
 
-type Realm ={
+type Realm = {
   context: context;
   response: response;
   request: request;

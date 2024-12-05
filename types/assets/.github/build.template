@@ -1,0 +1,126 @@
+name: Realm Build & Push
+on:
+  - workflow_dispatch
+  - push
+  - pull_request
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  inventory:
+    name: Inventory
+    runs-on: ubuntu-latest
+    outputs:
+      stage: ${{ steps.stage.outputs.STAGE }}
+      pr: ${{ steps.pullrequest.outputs.PULL_REQUEST_NUMBER }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: 'Is this a push to the Main branch?'
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: echo "STAGE=main" >> $GITHUB_ENV
+
+      - name: 'Is this a push to the Staging branch?'
+        if: ${{ github.ref == 'refs/heads/develop' }}
+        run: echo "STAGE=develop" >> $GITHUB_ENV
+
+      - name: 'Is this a different branch?'
+        if: ${{ !env.STAGE }}
+        run: echo "STAGE=branch" >> $GITHUB_ENV
+
+      - name: 'Output stage'
+        id: stage
+        run: echo "STAGE=${{env.STAGE}}" > $GITHUB_OUTPUT
+
+      - name: 'Get pull request number'
+        id: pullrequest
+        if: ${{github.event_name == 'pull_request'}}
+        run: echo "PULL_REQUEST_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")" >> $GITHUB_OUTPUT
+
+      - name: Load repository
+        uses: actions/checkout@master
+
+      - id: set-matrix
+        run: echo matrix=$(jq -r -c  . .github/workflows/apps.json) >> $GITHUB_OUTPUT
+
+  realm-branch:
+    needs:
+      - inventory
+    name: Pull request push
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' || needs.inventory.outputs.stage != 'branch'}}
+    environment: ${{ (needs.inventory.outputs.pr && format('pr-{0}',needs.inventory.outputs.pr)) || needs.inventory.outputs.stage }}
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJson(needs.inventory.outputs.matrix) }}
+    steps:
+      - run: echo env=${{ (needs.inventory.outputs.pr && format('pr-{0}',needs.inventory.outputs.pr)) || needs.inventory.outputs.stage }} >> $GITHUB_ENV
+      - name: Generate a token
+        id: generate_token
+        uses: tibdex/github-app-token@v1.7.0
+        with:
+          app_id: ${{ secrets.MERGE_APP_ID }}
+          private_key: ${{ secrets.MERGE_PRIVATE_KEY }}
+      - name: Load repository
+        uses: actions/checkout@master
+      - name: 'Get app id for ${{ env.env }}'
+        id: get-id
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+        continue-on-error: true
+        run: echo APP_ID=$(gh variable list -e "${{ env.env }}" | grep -i ${{matrix.app.name}} | awk -F' ' '{print $2}') >> $GITHUB_ENV
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          cache: npm
+      - name: 'Install the Realm CLI & authenticate'
+        run: |
+          npm install -g mongodb-realm-cli
+          realm-cli login --api-key="${{ secrets.REALM_API_PUBLIC_KEY }}" --private-api-key="${{ secrets.REALM_API_PRIVATE_KEY }}" --realm-url https://realm.mongodb.com --atlas-url https://cloud.mongodb.com
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: APP=${{matrix.app.name}} npm run build
+
+      - name: Copy realm_config.json
+        env:
+          PREFIX: ${{ env.env }}
+          APP_ID: ${{ env.APP_ID }}
+        run: envsubst < inventory/template/${{matrix.app.name}}.json > apps/${{matrix.app.name}}/realm_config.json
+
+      - name: Copy realm_config.json (override with ${{ env.env }})
+        continue-on-error: true
+        env:
+          PREFIX: ${{ env.env }}
+          APP_ID: ${{ env.APP_ID }}
+        run: envsubst < inventory/${{ env.env }}/${{matrix.app.name}}.json > apps/${{matrix.app.name}}/realm_config.json
+
+      - run: mkdir -p apps/${{matrix.app.name}}/hosting/files/
+      
+      - name: update hosting file
+        continue-on-error: true
+        env:
+          APP_ID: ${{ env.APP_ID }}
+        run: envsubst < apps/${{matrix.app.name}}/hosting/config.json > apps/${{matrix.app.name}}/hosting/config.json
+      
+      - name: copy package.json
+        run: cp package.json apps/${{matrix.app.name}}/functions/package.json
+
+      - name: Push to realm
+        id: push_app
+        run: realm-cli push -y --project ${{secrets.REALM_PROJECT}} -s --include-package-json
+        continue-on-error: true
+        working-directory: apps/${{matrix.app.name}}
+
+      - name: Push app-id to env
+        if: ${{!env.APP_ID}}
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: gh variable set ${{matrix.app.name}} --body $(cat realm_config.json | jq ".app_id" -r) -e "${{ env.env }}"
+        working-directory: apps/${{matrix.app.name}}
+
+      - name: Throw Error
+        if: ${{steps.push_app.outcome == 'failure'}}
+        run: exit 1

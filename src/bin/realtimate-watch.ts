@@ -64,7 +64,7 @@ program
 
           const impacted: string[] = [
             fullpath,
-            ...graph.getParentFiles(fullpath),
+            ...graph?.getParentFiles(fullpath) || [],
           ];
 
           const shouldRebuild = impacted.filter((path) =>

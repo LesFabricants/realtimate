@@ -96,7 +96,6 @@ program
 
       console.time('build');
       await seriesOrParallel(apps, async (app) => { await build(app.source, app.destination, false, options.verbose); }, options.buildInBand);
-
       console.timeEnd('build');
 
       console.log(
